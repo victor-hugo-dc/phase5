@@ -1,12 +1,9 @@
 from flask import Flask, request, jsonify
-from flask_restful import Resource
-from flask_marshmallow import Marshmallow
-from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Api, Resource
+from marshmallow import ValidationError, fields
 from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
 from config import app, db, api
 
-
-ma = Marshmallow(app)
 
 # Schemas
 user_schema = UserSchema()
@@ -18,22 +15,22 @@ bookings_schema = BookingSchema(many=True)
 review_schema = ReviewSchema()
 reviews_schema = ReviewSchema(many=True)
 
-# Resources
+
 class UserResource(Resource):
     def get(self, user_id=None):
         if user_id:
-            user = User.query.get_or_404(user_id)
-            return user_schema.dump(user), 200
+            user = User.query.get(user_id)
+            if not user:
+                return {"error": "User not found"}, 404
+            return user_schema.dump(user)
         users = User.query.all()
-        return users_schema.dump(users), 200
-
+        if not users:
+            return {"message": "No users found"}, 404
+        return users_schema.dump(users)
+    
     def post(self):
-        data = request.json
-        new_user = User(
-            name=data['name'],
-            email=data['email'],
-            password=data['password']
-        )
+        data = request.get_json()
+        new_user = User(**data)
         db.session.add(new_user)
         db.session.commit()
         return user_schema.dump(new_user), 201
@@ -41,71 +38,54 @@ class UserResource(Resource):
 class PropertyResource(Resource):
     def get(self, property_id=None):
         if property_id:
-            property_ = Property.query.get_or_404(property_id)
-            return property_schema.dump(property_), 200
+            property_ = Property.query.get(property_id)
+            if not property_:
+                return {"error": "Property not found"}, 404
+            return property_schema.dump(property_)
         properties = Property.query.all()
-        return properties_schema.dump(properties), 200
-
+        if not properties:
+            return {"message": "No properties found"}, 404
+        return properties_schema.dump(properties)
+    
     def post(self):
-        data = request.json
-        new_property = Property(
-            title=data['title'],
-            description=data['description'],
-            price_per_night=data['price_per_night'],
-            location=data['location'],
-            owner_id=data['owner_id']
-        )
+        data = request.get_json()
+        new_property = Property(**data)
         db.session.add(new_property)
         db.session.commit()
         return property_schema.dump(new_property), 201
 
 class BookingResource(Resource):
-    def get(self, booking_id=None):
-        if booking_id:
-            booking = Booking.query.get_or_404(booking_id)
-            return booking_schema.dump(booking), 200
-        bookings = Booking.query.all()
-        return bookings_schema.dump(bookings), 200
-
     def post(self):
-        data = request.json
-        new_booking = Booking(
-            user_id=data['user_id'],
-            property_id=data['property_id'],
-            start_date=data['start_date'],
-            end_date=data['end_date']
-        )
+        data = request.get_json()
+        new_booking = Booking(**data)
         db.session.add(new_booking)
         db.session.commit()
-        return booking_schema.dump(new_booking), 201
+        return {"message": "Booking created successfully"}, 201
 
 class ReviewResource(Resource):
-    def get(self, review_id=None):
-        if review_id:
-            review = Review.query.get_or_404(review_id)
-            return review_schema.dump(review), 200
-        reviews = Review.query.all()
-        return reviews_schema.dump(reviews), 200
-
     def post(self):
-        data = request.json
-        new_review = Review(
-            user_id=data['user_id'],
-            property_id=data['property_id'],
-            rating=data['rating'],
-            comment=data.get('comment')
-        )
+        data = request.get_json()
+        user_id = data.get('user_id')
+        property_id = data.get('property_id')
+        
+        booking = Booking.query.filter_by(user_id=user_id, property_id=property_id).first()
+        if not booking:
+            return {"error": "User must have a booking before leaving a review."}, 400
+        
+        new_review = Review(**data)
         db.session.add(new_review)
         db.session.commit()
-        return review_schema.dump(new_review), 201
+        return {"message": "Review added successfully"}, 201
 
-# Register API resources
+
+
+# API Routes
 api.add_resource(UserResource, '/users', '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')
 api.add_resource(BookingResource, '/bookings', '/bookings/<int:booking_id>')
 api.add_resource(ReviewResource, '/reviews', '/reviews/<int:review_id>')
 
-# Run the app
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

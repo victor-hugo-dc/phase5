@@ -1,111 +1,105 @@
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
-from marshmallow import fields
+from marshmallow import Schema, fields, validates, ValidationError
 from config import db
+from flask_marshmallow import Marshmallow
 
+ma = Marshmallow()
 
-# User Model
 class User(db.Model):
     __tablename__ = 'users'
-
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    owned_properties = db.relationship('Property', back_populates='owner', lazy=True)
+    bookings = db.relationship('Booking', back_populates='user', lazy=True)
+    reviews = db.relationship('Review', back_populates='user', lazy=True)
 
-    # Relationships
-    properties = db.relationship('Property', back_populates='owner', cascade='all, delete')
-    bookings = db.relationship('Booking', back_populates='user', cascade='all, delete')
-    reviews = db.relationship('Review', back_populates='user', cascade='all, delete')
 
-# Property Model
 class Property(db.Model):
     __tablename__ = 'properties'
-
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
     price_per_night = db.Column(db.Float, nullable=False)
-    location = db.Column(db.String(200), nullable=False)
+    location_name = db.Column(db.String(100), nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    owner = db.relationship('User', back_populates='owned_properties')
+    bookings = db.relationship('Booking', back_populates='property', lazy=True)
+    reviews = db.relationship('Review', back_populates='property', lazy=True)
 
-    # Relationships
-    owner = db.relationship('User', back_populates='properties')
-    bookings = db.relationship('Booking', back_populates='property', cascade='all, delete')
-    reviews = db.relationship('Review', back_populates='property', cascade='all, delete')
 
-# Booking Model
 class Booking(db.Model):
     __tablename__ = 'bookings'
-
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     property_id = db.Column(db.Integer, db.ForeignKey('properties.id'), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
-
-    # Relationships
     user = db.relationship('User', back_populates='bookings')
     property = db.relationship('Property', back_populates='bookings')
 
-# Review Model
+
 class Review(db.Model):
     __tablename__ = 'reviews'
-
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     property_id = db.Column(db.Integer, db.ForeignKey('properties.id'), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    comment = db.Column(db.Text, nullable=True)
-
-    # Relationships
+    comment = db.Column(db.Text, nullable=False)
     user = db.relationship('User', back_populates='reviews')
     property = db.relationship('Property', back_populates='reviews')
 
-# Marshmallow Schemas
-class UserSchema(SQLAlchemyAutoSchema):
-    class Meta:
-        model = User
-        include_relationships = True
-        load_instance = True
 
-    properties = fields.Nested('PropertySchema', many=True, exclude=('owner', 'bookings', 'reviews'))
-    bookings = fields.Nested('BookingSchema', many=True, exclude=('user', 'property'))
-    reviews = fields.Nested('ReviewSchema', many=True, exclude=('user', 'property'))
-
-
-class PropertySchema(SQLAlchemyAutoSchema):
-    class Meta:
-        model = Property
-        include_relationships = True
-        load_instance = True
-
-    # Include owner_id explicitly
-    owner_id = fields.Integer()
-    owner = fields.Nested(UserSchema, exclude=('properties', 'bookings', 'reviews'))
-    bookings = fields.Nested('BookingSchema', many=True, exclude=('property', 'user'))
-    reviews = fields.Nested('ReviewSchema', many=True, exclude=('property', 'user'))
-
-
-class BookingSchema(SQLAlchemyAutoSchema):
-    class Meta:
-        model = Booking
-        include_relationships = True
-        load_instance = True
-
-    # Include property_id explicitly
+class ReviewSchema(ma.SQLAlchemyAutoSchema):
+    user_id = fields.Integer()
     property_id = fields.Integer()
-    user = fields.Nested(UserSchema, exclude=('bookings', 'properties', 'reviews'))
-    property = fields.Nested(PropertySchema, exclude=('bookings', 'owner', 'reviews'))
-
-
-class ReviewSchema(SQLAlchemyAutoSchema):
+    
     class Meta:
         model = Review
-        include_relationships = True
-        load_instance = True
 
-    # Include property_id explicitly
+class BookingSchema(ma.SQLAlchemyAutoSchema):
+    user_id = fields.Integer()
     property_id = fields.Integer()
-    user = fields.Nested(UserSchema, exclude=('reviews', 'bookings', 'properties'))
-    property = fields.Nested(PropertySchema, exclude=('reviews', 'owner', 'bookings'))
+    
+    class Meta:
+        model = Booking
+
+class PropertySchema(ma.SQLAlchemyAutoSchema):
+    owner = ma.Nested(lambda: UserSchema(only=("id", "name")))
+    bookings = ma.Nested(BookingSchema, many=True)
+    reviews = ma.Nested(ReviewSchema, many=True)
+
+    class Meta:
+        model = Property
+
+class UserSchema(ma.SQLAlchemyAutoSchema):
+    owned_properties = ma.Method("get_owned_properties")
+    booked_properties = ma.Method("get_booked_properties")
+
+    class Meta:
+        model = User
+
+    def get_owned_properties(self, user):
+        return [
+            {
+                **PropertySchema().dump(property),
+                "bookings": BookingSchema(many=True).dump(property.bookings),
+                "reviews": ReviewSchema(many=True).dump(property.reviews),
+            }
+            for property in user.owned_properties
+        ]
+
+    def get_booked_properties(self, user):
+        return [
+            {
+                **PropertySchema().dump(booking.property),
+                "bookings": BookingSchema(many=True).dump(
+                    [b for b in booking.property.bookings if b.user_id == user.id]
+                ),
+            }
+            for booking in user.bookings
+        ]
