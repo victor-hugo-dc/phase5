@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     AppBar,
     Toolbar,
@@ -6,16 +6,25 @@ import {
     Box,
     TextField,
     IconButton,
-    Divider,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
 import Avatar from '@mui/material/Avatar';
-import { DatePicker } from '@mui/x-date-pickers';
+import { Formik, Form, Field } from "formik";
+import * as Yup from "yup";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
-    const [checkIn, setCheckIn] = useState(null);
-    const [checkOut, setCheckOut] = useState(null);
+    const navigate = useNavigate();
+
+    const validationSchema = Yup.object({
+        location: Yup.string().required("Location is required"),
+        startDate: Yup.date().required("Start date is required").typeError("Invalid date"),
+        endDate: Yup.date()
+            .required("End date is required")
+            .typeError("Invalid date")
+            .min(Yup.ref("startDate"), "End date must be after start date"),
+    });
 
     return (
         <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', padding: 1 }}>
@@ -39,30 +48,58 @@ const Navbar = () => {
                         mx: 4,
                     }}
                 >
-                    <TextField
-                        placeholder="Search destinations"
-                        variant="standard"
-                        InputProps={{ disableUnderline: true }}
-                        fullWidth
-                        sx={{ fontSize: '14px' }}
-                    />
-                    <Divider orientation="vertical" flexItem />
-                    <DatePicker
-                        value={checkIn}
-                        onChange={setCheckIn}
-                        minDate={new Date()}
-                        label="Check-in"
-                    />
-                    <Divider orientation="vertical" flexItem />
-                    <DatePicker
-                        label="Check-out"
-                        value={checkOut}
-                        onChange={(newValue) => setCheckOut(newValue)}
-                        minDate={new Date()} // Restrict past dates
-                    />
-                    <IconButton sx={{ backgroundColor: '#FF385C', color: 'white', borderRadius: '50%', marginLeft: 2 }}>
-                        <SearchIcon />
-                    </IconButton>
+                    <Formik
+                        initialValues={{ location: "", startDate: "", endDate: "" }}
+                        validationSchema={validationSchema}
+                        onSubmit={(values) => {
+                            console.log("Form Submitted:", values);
+                            navigate(`/search?location=${values.location}&start=${values.startDate}&end=${values.endDate}`);
+                        }}
+                    >
+                        {({ values, errors, touched }) => (
+                            <Form style={{ display: "flex", gap: "16px", width: "100%" }}>
+                                {/* Regular Location Input */}
+                                <Field
+                                    as={TextField}
+                                    name="location"
+                                    label="Location"
+                                    variant="outlined"
+                                    fullWidth
+                                    error={touched.location && !!errors.location}
+                                    helperText={touched.location && errors.location}
+                                />
+
+                                {/* Start Date Input */}
+                                <Field
+                                    as={TextField}
+                                    name="startDate"
+                                    type="date"
+                                    variant="outlined"
+                                    fullWidth
+                                    error={touched.startDate && !!errors.startDate}
+                                    helperText={touched.startDate && errors.startDate}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+
+                                {/* End Date Input */}
+                                <Field
+                                    as={TextField}
+                                    name="endDate"
+                                    type="date"
+                                    variant="outlined"
+                                    fullWidth
+                                    error={touched.endDate && !!errors.endDate}
+                                    helperText={touched.endDate && errors.endDate}
+                                    InputLabelProps={{ shrink: true }}
+                                />
+
+                                {/* Search Button */}
+                                <IconButton type="submit">
+                                    <SearchIcon />
+                                </IconButton>
+                            </Form>
+                        )}
+                    </Formik>
                 </Box>
 
                 {/* Right Section */}
