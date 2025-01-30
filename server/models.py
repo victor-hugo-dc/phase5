@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields, validates, ValidationError
 from config import db
 from flask_marshmallow import Marshmallow
+from werkzeug.security import generate_password_hash, check_password_hash
 
 ma = Marshmallow()
 
@@ -15,6 +16,14 @@ class User(db.Model):
     owned_properties = db.relationship('Property', back_populates='owner', lazy=True)
     bookings = db.relationship('Booking', back_populates='user', lazy=True)
     reviews = db.relationship('Review', back_populates='user', lazy=True)
+    
+    def set_password(self, password):
+        """Hashes password and stores it."""
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        """Checks if provided password matches the stored hash."""
+        return check_password_hash(self.password, password)
 
 
 class Property(db.Model):

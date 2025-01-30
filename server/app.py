@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 from marshmallow import ValidationError, fields
 from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
-from config import app, db, api
-
+from config import app, db, api, jwt
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 # Schemas
 user_schema = UserSchema()
@@ -14,6 +14,50 @@ booking_schema = BookingSchema()
 bookings_schema = BookingSchema(many=True)
 review_schema = ReviewSchema()
 reviews_schema = ReviewSchema(many=True)
+
+class SignupResource(Resource):
+    def post(self):
+        data = request.get_json()
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+
+        if not name or not email or not password:
+            return {"error": "All fields are required"}, 400
+        
+        if User.query.filter_by(email=email).first():
+            return {"error": "Email already exists"}, 400
+
+        new_user = User(name=name, email=email)
+        new_user.set_password(password)  # Hash password
+        db.session.add(new_user)
+        db.session.commit()
+
+        return {"message": "User registered successfully"}, 201
+
+
+class LoginResource(Resource):
+    def post(self):
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.check_password(password):
+            return {"error": "Invalid email or password"}, 401
+
+        access_token = create_access_token(identity=user.id)  # Generate JWT token
+        return {"access_token": access_token, "user_id": user.id}, 200
+
+
+class ProtectedResource(Resource):
+    @jwt_required()
+    def get(self):
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        return {"message": f"Hello, {user.name}"}, 200
 
 
 class UserResource(Resource):
@@ -80,6 +124,10 @@ class ReviewResource(Resource):
 
 
 # API Routes
+api.add_resource(SignupResource, '/signup')
+api.add_resource(LoginResource, '/login')
+api.add_resource(ProtectedResource, '/protected')
+
 api.add_resource(UserResource, '/users', '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')
 api.add_resource(BookingResource, '/bookings', '/bookings/<int:booking_id>')
