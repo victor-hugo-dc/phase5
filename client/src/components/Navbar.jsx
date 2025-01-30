@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     AppBar,
     Toolbar,
@@ -6,25 +6,44 @@ import {
     Box,
     TextField,
     IconButton,
+    Avatar,
+    Menu,
+    MenuItem,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
-import Avatar from '@mui/material/Avatar';
-import { Formik, Form, Field } from "formik";
-import * as Yup from "yup";
-import { useNavigate } from "react-router-dom";
+import { Formik, Form, Field } from 'formik';
+import * as Yup from 'yup';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
+    const { token, userId } = useAuth(); // Use AuthContext to get token/userId
+    const [anchorEl, setAnchorEl] = useState(null); // State for managing menu
     const navigate = useNavigate();
 
     const validationSchema = Yup.object({
-        location: Yup.string().required("Location is required"),
-        startDate: Yup.date().required("Start date is required").typeError("Invalid date"),
+        location: Yup.string().required('Location is required'),
+        startDate: Yup.date().required('Start date is required').typeError('Invalid date'),
         endDate: Yup.date()
-            .required("End date is required")
-            .typeError("Invalid date")
-            .min(Yup.ref("startDate"), "End date must be after start date"),
+            .required('End date is required')
+            .typeError('Invalid date')
+            .min(Yup.ref('startDate'), 'End date must be after start date'),
     });
+
+    const handleMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleLogout = () => {
+        // Handle logout functionality (clear token, userId, etc.)
+        handleMenuClose();
+        navigate('/auth/login');
+    };
 
     return (
         <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', padding: 1 }}>
@@ -49,16 +68,17 @@ const Navbar = () => {
                     }}
                 >
                     <Formik
-                        initialValues={{ location: "", startDate: "", endDate: "" }}
+                        initialValues={{ location: '', startDate: '', endDate: '' }}
                         validationSchema={validationSchema}
                         onSubmit={(values) => {
-                            console.log("Form Submitted:", values);
-                            navigate(`/search?location=${values.location}&start=${values.startDate}&end=${values.endDate}`);
+                            console.log('Form Submitted:', values);
+                            navigate(
+                                `/search?location=${values.location}&start=${values.startDate}&end=${values.endDate}`
+                            );
                         }}
                     >
                         {({ values, errors, touched }) => (
-                            <Form style={{ display: "flex", gap: "16px", width: "100%" }}>
-                                {/* Regular Location Input */}
+                            <Form style={{ display: 'flex', gap: '16px', width: '100%' }}>
                                 <Field
                                     as={TextField}
                                     name="location"
@@ -69,7 +89,6 @@ const Navbar = () => {
                                     helperText={touched.location && errors.location}
                                 />
 
-                                {/* Start Date Input */}
                                 <Field
                                     as={TextField}
                                     name="startDate"
@@ -81,7 +100,6 @@ const Navbar = () => {
                                     InputLabelProps={{ shrink: true }}
                                 />
 
-                                {/* End Date Input */}
                                 <Field
                                     as={TextField}
                                     name="endDate"
@@ -93,7 +111,6 @@ const Navbar = () => {
                                     InputLabelProps={{ shrink: true }}
                                 />
 
-                                {/* Search Button */}
                                 <IconButton type="submit">
                                     <SearchIcon />
                                 </IconButton>
@@ -104,14 +121,36 @@ const Navbar = () => {
 
                 {/* Right Section */}
                 <Box display="flex" alignItems="center" gap={2}>
-                    <IconButton>
+                    <IconButton onClick={handleMenuClick}>
                         <MenuIcon />
                     </IconButton>
-                    <Avatar alt="Profile" src="/profile.jpg" />
+                    <Avatar
+                        alt="Profile"
+                        src={token ? '/profile.jpg' : '/grey-circle.jpg'} // Display grey circle if not logged in
+                    />
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={handleMenuClose}
+                    >
+                        {token ? (
+                            <>
+                                <MenuItem onClick={() => navigate('/')}>Trips</MenuItem>
+                                <MenuItem onClick={() => navigate('/')}>Host Your Home</MenuItem>
+                                <MenuItem onClick={() => navigate('/me')}>Account</MenuItem>
+                                <MenuItem onClick={handleLogout}>Log Out</MenuItem>
+                            </>
+                        ) : (
+                            <>
+                                <MenuItem onClick={() => navigate('/auth/register')}>Sign Up</MenuItem>
+                                <MenuItem onClick={() => navigate('/auth/login')}>Log In</MenuItem>
+                            </>
+                        )}
+                    </Menu>
                 </Box>
             </Toolbar>
         </AppBar>
-    )
-}
+    );
+};
 
 export default Navbar;
