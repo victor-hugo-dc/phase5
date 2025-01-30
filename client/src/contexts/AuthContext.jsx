@@ -5,19 +5,29 @@ export const AuthContext = createContext();
 
 // AuthProvider component to wrap the app and provide auth state
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(null);
-    const [userId, setUserId] = useState(null);
+    const [token, setToken] = useState(localStorage.getItem('token') || null);
+    const [userId, setUserId] = useState(localStorage.getItem('userId') || null);
 
-    // Function to log in
-    const login = (newToken, newUserId) => {
-        setToken(newToken); // Store token in state
-        setUserId(newUserId);
-    };
+    // Save to localStorage when token or userId changes
+    useEffect(() => {
+        if (token) {
+            localStorage.setItem('token', token);
+        } else {
+            localStorage.removeItem('token');
+        }
 
-    // Function to log out
+        if (userId) {
+            localStorage.setItem('userId', userId);
+        } else {
+            localStorage.removeItem('userId');
+        }
+    }, [token, userId]);
+
     const logout = () => {
-        setToken(null); // Clear the token from state
+        setToken(null);
         setUserId(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
     };
 
     return (
