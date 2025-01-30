@@ -29,12 +29,13 @@ const Signup = () => {
                 password
             });
 
-            // On successful signup, log in the user with the response token
-            const { access_token, user_id } = response.data;
-            login(access_token, user_id);
+            const isLoginSuccessful = await login(email, password);
 
-            // Redirect to the profile page
-            navigate('/profile');
+            if (isLoginSuccessful) {
+                navigate('/profile');
+            } else {
+                alert('Login failed! Please check your credentials.');
+            }
         } catch (error) {
             console.error('Signup error:', error);
             alert('Signup failed: ' + (error.response?.data?.error || 'Unknown error'));

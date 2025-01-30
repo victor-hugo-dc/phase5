@@ -9,6 +9,7 @@ import {
     Avatar,
     Menu,
     MenuItem,
+    FormControl,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -17,6 +18,8 @@ import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { format, isBefore, parseISO } from 'date-fns';
+import { DatePicker } from '@mui/x-date-pickers';
 
 const Navbar = () => {
     const { token, userId } = useAuth(); // Use AuthContext to get token/userId
@@ -44,6 +47,10 @@ const Navbar = () => {
         // Handle logout functionality (clear token, userId, etc.)
         handleMenuClose();
         navigate('/auth/login');
+    };
+
+    const shouldDisableDate = (date) => {
+        return isBefore(date, new Date().setHours(0, 0, 0, 0));
     };
 
     return (
@@ -80,7 +87,7 @@ const Navbar = () => {
                             );
                         }}
                     >
-                        {({ values, errors, touched }) => (
+                        {({ values, errors, touched, setFieldValue }) => (
                             <Form style={{ display: 'flex', gap: '16px', width: '100%' }}>
                                 <Field
                                     as={TextField}
@@ -92,27 +99,37 @@ const Navbar = () => {
                                     helperText={touched.location && errors.location}
                                 />
 
-                                <Field
-                                    as={TextField}
-                                    name="startDate"
-                                    type="date"
-                                    variant="outlined"
-                                    fullWidth
-                                    error={touched.startDate && !!errors.startDate}
-                                    helperText={touched.startDate && errors.startDate}
-                                    InputLabelProps={{ shrink: true }}
-                                />
+                                <FormControl fullWidth>
+                                    <DatePicker
+                                        label="Check-In"
+                                        value={values.startDate ? parseISO(values.startDate) : null} // Corrected the date handling
+                                        onChange={(newValue) => setFieldValue('startDate', format(newValue, 'yyyy-MM-dd'))}
+                                        shouldDisableDate={shouldDisableDate}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                error={touched.startDate && !!errors.startDate}
+                                                helperText={touched.startDate && errors.startDate}
+                                            />
+                                        )}
+                                    />
+                                </FormControl>
 
-                                <Field
-                                    as={TextField}
-                                    name="endDate"
-                                    type="date"
-                                    variant="outlined"
-                                    fullWidth
-                                    error={touched.endDate && !!errors.endDate}
-                                    helperText={touched.endDate && errors.endDate}
-                                    InputLabelProps={{ shrink: true }}
-                                />
+                                <FormControl fullWidth>
+                                    <DatePicker
+                                        label="Check-Out"
+                                        value={values.endDate ? parseISO(values.endDate) : null} // Corrected the date handling
+                                        onChange={(newValue) => setFieldValue('endDate', format(newValue, 'yyyy-MM-dd'))}
+                                        shouldDisableDate={shouldDisableDate}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                error={touched.endDate && !!errors.endDate}
+                                                helperText={touched.endDate && errors.endDate}
+                                            />
+                                        )}
+                                    />
+                                </FormControl>
 
                                 <IconButton type="submit">
                                     <SearchIcon />
@@ -140,7 +157,7 @@ const Navbar = () => {
                             <>
                                 <MenuItem onClick={() => navigate('/')}>Trips</MenuItem>
                                 <MenuItem onClick={() => navigate('/')}>Host Your Home</MenuItem>
-                                <MenuItem onClick={() => navigate('/me')}>Account</MenuItem>
+                                <MenuItem onClick={() => navigate('/profile')}>Account</MenuItem>
                                 <MenuItem onClick={handleLogout}>Log Out</MenuItem>
                             </>
                         ) : (

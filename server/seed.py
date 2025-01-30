@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from faker import Faker
 import random
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 from models import db, User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
 
 # Initialize Faker
@@ -17,7 +17,7 @@ def seed_data():
 
         # Create Users
         users = []
-        for _ in range(10):
+        for _ in range(20):  # Increased the number of users to 20
             user = User(
                 name=fake.name(),
                 email=fake.email(),
@@ -30,7 +30,7 @@ def seed_data():
 
         # Create Properties
         properties = []
-        for owner in random.sample(users, k=5):  # Randomly assign 5 users as property owners
+        for owner in random.sample(users, k=15):  # Randomly assign 10 users as property owners
             for _ in range(random.randint(1, 3)):  # Each owner can own 1-3 properties
                 property = Property(
                     title=fake.text(max_nb_chars=20),
@@ -46,13 +46,17 @@ def seed_data():
 
         db.session.commit()
 
-        # Create Bookings
+        bookings = []
         for user in users:
-            if user not in [prop.owner for prop in properties]:  # Users who do not own properties
-                booked_properties = random.sample(properties, k=random.randint(1, 3))
-                for property in booked_properties:
-                    start_date = fake.date_between(start_date="-30d", end_date="+30d")
-                    end_date = start_date + timedelta(days=random.randint(1, 7))
+            booked_properties = random.sample(properties, k=random.randint(1, 3))  # 1-3 properties per user
+            for property in booked_properties:
+                # Make sure the user doesn't book their own property
+                if property.owner_id != user.id:
+                    # Use datetime to create date objects
+                    start_date = datetime(2025, 1, 30) + timedelta(days=random.randint(0, 30))  # Near future
+                    end_date = start_date + timedelta(days=random.randint(1, 7))  # Booking length 1-7 days
+
+                    # Ensure no conflicting bookings
                     if not any(
                         b.property_id == property.id and 
                         (b.start_date <= end_date and b.end_date >= start_date)
@@ -64,6 +68,7 @@ def seed_data():
                             start_date=start_date,
                             end_date=end_date
                         )
+                        bookings.append(booking)
                         db.session.add(booking)
 
         db.session.commit()

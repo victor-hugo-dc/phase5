@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { useRoutes } from "react-router-dom";
 import MainLayout from "../layout/main";
 import AuthLayout from "../layout/auth";
+import ProfileLayout from "../layout/profile";
 
 const Loadable = (Component) => (props) => {
     return (
@@ -31,9 +32,10 @@ export default function Router() {
         },
         {
             path: "/",
+            element: <ProfileLayout />,
             children: [
                 { path: "host/:id", element: <HostPage/>},
-                { path: "me", element: <ProfilePage /> },
+                { path: "profile", element: <ProfilePage /> },
             ],
         },
     ]);
