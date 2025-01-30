@@ -1,41 +1,28 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
+import * as Yup from 'yup'; 
 import { TextField, Button, Box } from '@mui/material';
 
 const Login = () => {
-    const { login } = useAuth();
+    const { login } = useAuth(); 
     const navigate = useNavigate();
 
-    // Validation Schema using Yup
     const validationSchema = Yup.object({
         email: Yup.string().email('Invalid email address').required('Email is required'),
         password: Yup.string().required('Password is required')
     });
 
     const handleLogin = async (values) => {
-        try {
-            const { email, password } = values;
-            // Sending the login request to your Flask API
-            const response = await axios.post('http://localhost:5000/login', {
-                email,
-                password
-            });
+        const { email, password } = values;
 
-            // Extracting the token from the response
-            const { access_token, user_id } = response.data;
+        const isLoginSuccessful = await login(email, password);
 
-            // Store the token in the context
-            login(access_token, user_id);
-
-            // Redirect to the profile page
+        if (isLoginSuccessful) {
             navigate('/profile');
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Login failed: ' + (error.response?.data?.error || 'Unknown error'));
+        } else {
+            alert('Login failed! Please check your credentials.');
         }
     };
 

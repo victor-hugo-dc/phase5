@@ -1,28 +1,31 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-// Create the context
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
-// AuthProvider component to wrap the app and provide auth state
 export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token') || null);
     const [userId, setUserId] = useState(localStorage.getItem('userId') || null);
 
-    // Save to localStorage when token or userId changes
-    useEffect(() => {
-        if (token) {
-            localStorage.setItem('token', token);
-        } else {
-            localStorage.removeItem('token');
-        }
+    const login = async (email, password) => {
+        try {
+            const response = await axios.post('http://localhost:5000/login', { email, password });
+            const { access_token, user_id } = response.data;
 
-        if (userId) {
-            localStorage.setItem('userId', userId);
-        } else {
-            localStorage.removeItem('userId');
-        }
-    }, [token, userId]);
+            setToken(access_token);
+            setUserId(user_id);
 
+            localStorage.setItem('token', access_token);
+            localStorage.setItem('userId', user_id);
+
+            return true;
+        } catch (error) {
+            console.error('Error during login:', error);
+            return false;
+        }
+    };
+
+    // Logout function
     const logout = () => {
         setToken(null);
         setUserId(null);
@@ -37,7 +40,6 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
-    return useContext(AuthContext);
+    return React.useContext(AuthContext);
 };
