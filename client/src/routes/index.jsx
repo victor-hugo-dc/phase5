@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { useRoutes } from "react-router-dom";
 import MainLayout from "../layout/main";
+import AuthLayout from "../layout/auth";
 
 const Loadable = (Component) => (props) => {
     return (
@@ -14,7 +15,7 @@ export default function Router() {
     return useRoutes([
         {
             path: "/auth",
-            element: <></>, // change this to AuthLayout
+            element: <AuthLayout />,
             children: [
                 { path: "login", element: <LoginPage /> },
                 { path: "register", element: <SignupPage /> },
