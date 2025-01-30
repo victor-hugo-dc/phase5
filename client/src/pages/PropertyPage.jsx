@@ -45,6 +45,12 @@ const PropertyPage = () => {
         });
     };
 
+    const calculateAverageRating = () => {
+        if (!property.reviews || property.reviews.length === 0) return 0.0;
+        const total = property.reviews.reduce((sum, review) => sum + review.rating, 0);
+        return (total / property.reviews.length).toFixed(1);
+    };
+
     const shouldDisableDate = (date) => {
         const formattedDate = format(date, 'yyyy-MM-dd');
         return bookedDates.includes(formattedDate) || isBefore(date, new Date().setHours(0, 0, 0, 0));
@@ -130,7 +136,7 @@ const PropertyPage = () => {
                         }}
                     </Formik>
                     <Divider sx={{ marginTop: 3 }} />
-                    <Typography variant="h6" sx={{ marginTop: 2 }}>Reviews</Typography>
+                    <Typography variant="h6" sx={{ marginTop: 2 }}>Reviews {calculateAverageRating()}</Typography>
                     {property.reviews.length > 0 ? (
                         property.reviews.map((review) => (
                             <Box key={review.id} sx={{ marginTop: 2, padding: 2, border: '1px solid #ccc', borderRadius: 2 }}>

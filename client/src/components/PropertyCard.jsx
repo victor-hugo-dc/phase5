@@ -44,7 +44,7 @@ const PropertyCard = ({ property }) => {
                     Hosted by: {owner?.name}
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 2 }}>
-                    ${price_per_night.toFixed(2)} / night
+                    ${price_per_night.toFixed(2)} per night
                 </Typography>
             </CardContent>
         </Card>

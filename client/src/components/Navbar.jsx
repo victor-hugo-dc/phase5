@@ -16,6 +16,7 @@ import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
     const { token, userId } = useAuth(); // Use AuthContext to get token/userId
@@ -49,9 +50,11 @@ const Navbar = () => {
         <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', padding: 1 }}>
             <Toolbar sx={{ justifyContent: 'space-between' }}>
                 {/* Left Section */}
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000' }}>
-                    Phase5
-                </Typography>
+                <Link to="/" style={{ textDecoration: 'none' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000' }}>
+                        Phase5
+                    </Typography>
+                </Link>
 
                 {/* Search Section */}
                 <Box
