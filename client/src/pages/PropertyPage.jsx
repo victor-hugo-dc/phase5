@@ -47,7 +47,7 @@ const PropertyPage = () => {
 
     const shouldDisableDate = (date) => {
         const formattedDate = format(date, 'yyyy-MM-dd');
-        return bookedDates.includes(formattedDate) || isBefore(date, new Date());
+        return bookedDates.includes(formattedDate) || isBefore(date, new Date().setHours(0, 0, 0, 0));
     };
 
     const validationSchema = Yup.object().shape({
