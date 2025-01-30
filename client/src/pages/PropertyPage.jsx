@@ -4,56 +4,62 @@ import { PropertiesContext } from '../contexts/PropertiesContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, Typography, Card, CardMedia, CardContent, Button, Divider, FormControl } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import { format, addDays, isBefore, parseISO, isSameDay } from 'date-fns';
-import { Formik, Form, Field } from 'formik';
+import { format, addDays, isBefore, parseISO } from 'date-fns';
+import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 
 const PropertyPage = () => {
     const { properties } = useContext(PropertiesContext);
-    const { token } = useAuth();
+    const { token, userId } = useAuth();
     const { id } = useParams();
     const property = properties.find((p) => p.id.toString() === id);
-
-    const today = format(new Date(), 'yyyy-MM-dd');
     const [bookedDates, setBookedDates] = useState([]);
+    const [defaultDates, setDefaultDates] = useState({ checkInDate: '', checkOutDate: '' });
 
     useEffect(() => {
         if (property) {
             const bookings = property.bookings || [];
-            const booked = bookings.flatMap(({ start_date, end_date }) => {
-                let dates = [];
+            let booked = [];
+            bookings.forEach(({ start_date, end_date }) => {
                 let currentDate = parseISO(start_date);
-                const lastDate = parseISO(end_date);
-                while (!isBefore(lastDate, currentDate)) {
-                    dates.push(format(currentDate, 'yyyy-MM-dd'));
+                while (!isBefore(parseISO(end_date), currentDate)) {
+                    booked.push(format(currentDate, 'yyyy-MM-dd'));
                     currentDate = addDays(currentDate, 1);
                 }
-                return dates;
             });
             setBookedDates(booked);
+            findNextAvailableDates(booked);
         }
     }, [property]);
 
+    const findNextAvailableDates = (booked) => {
+        let start = new Date();
+        while (booked.includes(format(start, 'yyyy-MM-dd'))) {
+            start = addDays(start, 1);
+        }
+        let end = addDays(start, 5);
+        setDefaultDates({
+            checkInDate: format(start, 'yyyy-MM-dd'),
+            checkOutDate: format(end, 'yyyy-MM-dd'),
+        });
+    };
+
+    const shouldDisableDate = (date) => {
+        const formattedDate = format(date, 'yyyy-MM-dd');
+        return bookedDates.includes(formattedDate) || isBefore(date, new Date());
+    };
+
     const validationSchema = Yup.object().shape({
-        checkInDate: Yup.string()
-            .required('Required')
-            .test('valid-start', 'Date is unavailable', (value) => !bookedDates.includes(value))
-            .test('not-past', 'Cannot book past dates', (value) => {
-                const date = parseISO(value);
-                return isSameDay(date, new Date()) || !isBefore(date, new Date());
-            }),
+        checkInDate: Yup.string().required('Required'),
         checkOutDate: Yup.string()
             .required('Required')
-            .test('valid-end', 'Date is unavailable', (value) => !bookedDates.includes(value))
             .test('after-start', 'Check-out must be after check-in', function (value) {
                 return isBefore(parseISO(this.parent.checkInDate), parseISO(value));
             })
     });
 
-    if (!property) {
-        return <Typography variant="h4">Property not found</Typography>;
-    }
+    if (!property) return <Typography variant="h4">Property not found</Typography>;
 
     return (
         <Box sx={{ padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -61,27 +67,20 @@ const PropertyPage = () => {
                 <CardMedia component="img" height="400" image={property.image_url} alt={property.title} />
                 <CardContent>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{property.title}</Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ marginTop: 1 }}>{property.location_name}</Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ marginTop: 1 }}>{property.owner.name}</Typography>
+                    <Typography variant="body1" color="text.secondary">{property.location_name}</Typography>
+                    <Typography variant="body1" color="text.secondary">{property.owner.name}</Typography>
                     <Divider sx={{ marginTop: 3 }} />
                     <Formik
-                        initialValues={{
-                            checkInDate: today,
-                            checkOutDate: format(addDays(new Date(), 5), 'yyyy-MM-dd')
-                        }}
+                        enableReinitialize
+                        initialValues={defaultDates}
                         validationSchema={validationSchema}
                         onSubmit={async (values) => {
-                            const totalDays = (parseISO(values.checkOutDate) - parseISO(values.checkInDate)) / (1000 * 3600 * 24);
-                            const basePrice = property.price_per_night * totalDays;
-                            const cleaningFee = basePrice * 0.05;
-                            const serviceFee = basePrice * 0.03;
-                            const totalPrice = (basePrice + cleaningFee + serviceFee).toFixed(2);
                             try {
                                 await axios.post('/bookings', {
                                     property_id: property.id,
-                                    check_in: values.checkInDate,
-                                    check_out: values.checkOutDate,
-                                    total_price: totalPrice,
+                                    start_date: values.checkInDate,
+                                    end_date: values.checkOutDate,
+                                    user_id: userId,
                                 }, {
                                     headers: { Authorization: `Bearer ${token}` },
                                 });
@@ -91,27 +90,44 @@ const PropertyPage = () => {
                             }
                         }}
                     >
-                        {({ errors, touched, values, setFieldValue }) => (
-                            <Form>
-                                <Box sx={{ display: 'flex', gap: 2, marginTop: 2 }}>
-                                    <FormControl fullWidth>
-                                        <DatePicker
-                                            label="Check-In"
-                                            value={values.checkInDate}
-                                            onChange={(newValue) => setFieldValue('checkInDate', format(newValue, 'yyyy-MM-dd'))}
-                                        />
-                                    </FormControl>
-                                    <FormControl fullWidth>
-                                        <DatePicker
-                                            label="Check-Out"
-                                            value={values.checkOutDate}
-                                            onChange={(newValue) => setFieldValue('checkOutDate', format(newValue, 'yyyy-MM-dd'))}
-                                        />
-                                    </FormControl>
-                                </Box>
-                                <Button variant="contained" color="primary" sx={{ marginTop: 2 }} type="submit" disabled={!token}>Book Now</Button>
-                            </Form>
-                        )}
+                        {({ values, setFieldValue }) => {
+                            const totalDays = (parseISO(values.checkOutDate) - parseISO(values.checkInDate)) / (1000 * 3600 * 24);
+                            const basePrice = property.price_per_night * totalDays;
+                            const cleaningFee = basePrice * 0.02;
+                            const serviceFee = basePrice * 0.03;
+                            const totalPrice = (basePrice + cleaningFee + serviceFee).toFixed(2);
+
+                            return (
+                                <Form>
+                                    <Box sx={{ display: 'flex', gap: 2, marginTop: 2 }}>
+                                        <FormControl fullWidth>
+                                            <DatePicker
+                                                label="Check-In"
+                                                value={parseISO(values.checkInDate)}
+                                                onChange={(newValue) => setFieldValue('checkInDate', format(newValue, 'yyyy-MM-dd'))}
+                                                shouldDisableDate={shouldDisableDate}
+                                            />
+                                        </FormControl>
+                                        <FormControl fullWidth>
+                                            <DatePicker
+                                                label="Check-Out"
+                                                value={parseISO(values.checkOutDate)}
+                                                onChange={(newValue) => setFieldValue('checkOutDate', format(newValue, 'yyyy-MM-dd'))}
+                                                shouldDisableDate={shouldDisableDate}
+                                            />
+                                        </FormControl>
+                                    </Box>
+                                    <Box sx={{ marginTop: 2 }}>
+                                        <Typography>Price Breakdown:</Typography>
+                                        <Typography>{totalDays} {totalDays === 1 ? 'night' : 'nights'}: ${basePrice.toFixed(2)}</Typography>
+                                        <Typography>Cleaning Fee (2%): ${cleaningFee.toFixed(2)}</Typography>
+                                        <Typography>Service Fee (3%): ${serviceFee.toFixed(2)}</Typography>
+                                        <Typography>Total Price: ${totalPrice}</Typography>
+                                    </Box>
+                                    <Button variant="contained" color="primary" sx={{ marginTop: 2 }} type="submit" disabled={!token}>Book Now</Button>
+                                </Form>
+                            );
+                        }}
                     </Formik>
                     <Divider sx={{ marginTop: 3 }} />
                     <Typography variant="h6" sx={{ marginTop: 2 }}>Reviews</Typography>
