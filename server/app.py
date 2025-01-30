@@ -51,7 +51,7 @@ class UserResource(Resource):
     def get(self, user_id=None):
         if user_id:
             user = User.query.get(user_id)
-            return user_schema.dump(user) if user else {"error": "User not found"}, 404
+            return user_schema.dump(user)
         return users_schema.dump(User.query.all())
 
 
