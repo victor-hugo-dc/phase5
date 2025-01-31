@@ -39,6 +39,26 @@ class Property(db.Model):
     owner = db.relationship('User', back_populates='owned_properties')
     bookings = db.relationship('Booking', back_populates='property', lazy=True)
     reviews = db.relationship('Review', back_populates='property', lazy=True)
+    images = db.relationship('PropertyImage', back_populates='property', lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # if len(self.images) == 0:
+        #     raise ValidationError("A property must have at least one image.")
+        if len(self.images) > 10:
+            raise ValidationError("A property can have at most 10 images.")
+
+
+class PropertyImage(db.Model):
+    __tablename__ = 'property_images'
+    id = db.Column(db.Integer, primary_key=True)
+    image_path = db.Column(db.String(255), nullable=False)  # Stores image path
+    property_id = db.Column(db.Integer, db.ForeignKey('properties.id'), nullable=False)
+    property = db.relationship('Property', back_populates='images')
+
+    def __init__(self, image_path, property_id):
+        self.image_path = image_path
+        self.property_id = property_id
 
 
 class Booking(db.Model):
@@ -77,10 +97,18 @@ class BookingSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Booking
 
+class PropertyImageSchema(ma.SQLAlchemyAutoSchema):
+    image_path = fields.String()
+    property_id = fields.Integer()
+
+    class Meta:
+        model = PropertyImage
+
 class PropertySchema(ma.SQLAlchemyAutoSchema):
     owner = ma.Nested(lambda: UserSchema(only=("id", "name")))
     bookings = ma.Nested(BookingSchema, many=True)
     reviews = ma.Nested(ReviewSchema, many=True)
+    images = ma.Nested(PropertyImageSchema, many=True)
 
     class Meta:
         model = Property
@@ -98,6 +126,7 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
                 **PropertySchema().dump(property),
                 "bookings": BookingSchema(many=True).dump(property.bookings),
                 "reviews": ReviewSchema(many=True).dump(property.reviews),
+                "images": PropertyImageSchema(many=True).dump(property.images),
             }
             for property in user.owned_properties
         ]

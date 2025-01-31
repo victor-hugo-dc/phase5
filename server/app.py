@@ -4,8 +4,14 @@ from marshmallow import ValidationError
 from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
 from config import app, db, api, jwt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import os
+import requests
+from dotenv import load_dotenv
+import datetime
+from utils import get_coordinates, haversine
 
-# Schemas
+load_dotenv()
+
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 property_schema = PropertySchema()
@@ -105,9 +111,79 @@ class ReviewResource(Resource):
         return {"message": "Review added successfully"}, 201
 
 
+class Autocomplete(Resource):
+    def post(self):
+        data = request.get_json()
+
+        location = data.get('location')
+        if not location:
+            return {'message': 'Location is required'}, 400
+
+        url = f"https://maps.googleapis.com/maps/api/place/autocomplete/json"
+        params = {
+            'input': location,
+            'key': os.getenv('GOOGLE_API_KEY')
+        }
+
+        response = requests.get(url, params=params)
+
+        if response.status_code == 200:
+            suggestions = response.json().get('predictions', [])
+            return {'suggestions': suggestions}, 200
+        else:
+            return {'message': 'Error fetching data from Google Places API'}, 500
+        
+class AvailableProperties(Resource):
+    def post(self):
+        data = request.get_json()
+
+        if 'place_id' in data:
+            lat, lng = get_coordinates(data.get('place_id'))
+            if lat is None or lng is None:
+                return {'message': 'Invalid place_id or coordinates not found.'}, 400
+        else:
+            lat = lng = None  # No filtering by location if place_id is not provided
+        
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        try:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            return {'message': 'Invalid date format. Please use YYYY-MM-DD.'}, 400
+        
+        query = Property.query
+        properties = query.all()
+
+        available_properties = []
+
+        for property in properties:
+            is_available = True
+            for booking in property.bookings:
+                if not (end_date < booking.start_date or start_date > booking.end_date):
+                    is_available = False
+                    break
+
+            if is_available:
+                property_lat = property.latitude
+                property_lng = property.longitude
+
+                if lat is not None and lng is not None:
+                    if haversine(property_lat, property_lng, lat, lng) <= 25:
+                        available_properties.append(PropertySchema().dump(property))
+                else:
+                    available_properties.append(PropertySchema().dump(property))
+
+        return {'available_properties': available_properties}, 200
+
 # API Routes
 api.add_resource(SignupResource, '/signup')
 api.add_resource(LoginResource, '/login')
+
+api.add_resource(Autocomplete, '/autocomplete')
+
+api.add_resource(AvailableProperties, '/search')
 
 api.add_resource(UserResource, '/users', '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')
