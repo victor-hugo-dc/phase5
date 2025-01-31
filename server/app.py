@@ -4,8 +4,12 @@ from marshmallow import ValidationError
 from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
 from config import app, db, api, jwt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import os
+import requests
+from dotenv import load_dotenv
 
-# Schemas
+load_dotenv()
+
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 property_schema = PropertySchema()
@@ -105,9 +109,33 @@ class ReviewResource(Resource):
         return {"message": "Review added successfully"}, 201
 
 
+class Autocomplete(Resource):
+    def post(self):
+        data = request.get_json()
+
+        location = data.get('location')
+        if not location:
+            return {'message': 'Location is required'}, 400
+
+        url = f"https://maps.googleapis.com/maps/api/place/autocomplete/json"
+        params = {
+            'input': location,
+            'key': os.getenv('GOOGLE_API_KEY')
+        }
+
+        response = requests.get(url, params=params)
+
+        if response.status_code == 200:
+            suggestions = response.json().get('predictions', [])
+            return {'suggestions': suggestions}, 200
+        else:
+            return {'message': 'Error fetching data from Google Places API'}, 500
+
 # API Routes
 api.add_resource(SignupResource, '/signup')
 api.add_resource(LoginResource, '/login')
+
+api.add_resource(Autocomplete, '/autocomplete')
 
 api.add_resource(UserResource, '/users', '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')

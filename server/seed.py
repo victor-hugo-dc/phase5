@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from faker import Faker
 import random
 from datetime import datetime, timedelta
-from models import db, User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
+from models import db, User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema, PropertyImage
 
 # Initialize Faker
 fake = Faker()
@@ -30,7 +30,7 @@ def seed_data():
 
         # Create Properties
         properties = []
-        for owner in random.sample(users, k=15):  # Randomly assign 10 users as property owners
+        for owner in random.sample(users, k=15):  # Randomly assign 15 users as property owners
             for _ in range(random.randint(1, 3)):  # Each owner can own 1-3 properties
                 property = Property(
                     title=fake.text(max_nb_chars=20),
@@ -41,11 +41,28 @@ def seed_data():
                     longitude=fake.longitude(),
                     owner_id=owner.id
                 )
-                properties.append(property)
+
                 db.session.add(property)
+                db.session.flush()  # Flush to generate an ID before adding images
+
+                # Add at least one image before committing
+                num_images = random.randint(1, 10)  # Each property gets between 1 and 10 images
+                images = [
+                    PropertyImage(
+                        image_path=fake.image_url(),  # Simulated image file path
+                        property_id=property.id,  # Now property_id exists
+                    )
+                    for _ in range(num_images)
+                ]
+
+                for img in images:
+                    db.session.add(img)  # Add the images
+
+                properties.append(property)
 
         db.session.commit()
 
+        # Create Bookings
         bookings = []
         for user in users:
             booked_properties = random.sample(properties, k=random.randint(1, 3))  # 1-3 properties per user
