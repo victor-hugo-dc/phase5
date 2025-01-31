@@ -10,6 +10,9 @@ import {
     Menu,
     MenuItem,
     FormControl,
+    List,
+    ListItem,
+    ListItemText,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -20,14 +23,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { format, isBefore, parseISO } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers';
+import axios from 'axios'; // Make sure you have axios for API requests
 
 const Navbar = () => {
     const { token, userId } = useAuth(); // Use AuthContext to get token/userId
     const [anchorEl, setAnchorEl] = useState(null); // State for managing menu
+    const [location, setLocation] = useState(''); // Location input value
+    const [placeId, setPlaceId] = useState(''); // Store place ID
+    const [suggestions, setSuggestions] = useState([]); // Store suggestions
     const navigate = useNavigate();
 
     const validationSchema = Yup.object({
-        location: Yup.string().required('Location is required'),
+        location: Yup.string(),
         startDate: Yup.date().required('Start date is required').typeError('Invalid date'),
         endDate: Yup.date()
             .required('End date is required')
@@ -53,6 +60,29 @@ const Navbar = () => {
         return isBefore(date, new Date().setHours(0, 0, 0, 0));
     };
 
+    const handleLocationChange = async (e) => {
+        const value = e.target.value;
+        setLocation(value);
+
+        // Fetch location suggestions when typing
+        if (value) {
+            try {
+                const response = await axios.post('http://localhost:5000/autocomplete', { location: value });
+                setSuggestions(response.data.suggestions || []);
+            } catch (error) {
+                console.error("Error fetching autocomplete data", error);
+            }
+        } else {
+            setSuggestions([]);
+        }
+    };
+
+    const handleSuggestionSelect = (suggestion) => {
+        setLocation(suggestion.description); // Set the selected location in the input
+        setPlaceId(suggestion.place_id); // Store the place_id
+        setSuggestions([]); // Clear suggestions
+    };
+
     return (
         <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', padding: 1 }}>
             <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -75,16 +105,27 @@ const Navbar = () => {
                         flex: 1,
                         maxWidth: '800px',
                         mx: 4,
+                        position: 'relative', // To position the suggestion list relative to the input
                     }}
                 >
                     <Formik
                         initialValues={{ location: '', startDate: '', endDate: '' }}
                         validationSchema={validationSchema}
-                        onSubmit={(values) => {
-                            console.log('Form Submitted:', values);
-                            navigate(
-                                `/search?location=${values.location}&start=${values.startDate}&end=${values.endDate}`
-                            );
+                        onSubmit={async (values) => {
+                            try {
+                                const requestData = {
+                                    place_id: placeId, // place_id from the selected suggestion
+                                    start_date: values.startDate,
+                                    end_date: values.endDate,
+                                };
+
+                                const response = await axios.post('http://localhost:5000/search', requestData);
+
+                                console.log('Available Properties:', response.data.available_properties);
+
+                            } catch (error) {
+                                console.error('Error posting to search:', error);
+                            }
                         }}
                     >
                         {({ values, errors, touched, setFieldValue }) => (
@@ -95,14 +136,45 @@ const Navbar = () => {
                                     label="Location"
                                     variant="outlined"
                                     fullWidth
+                                    value={location}
+                                    onChange={handleLocationChange}
                                     error={touched.location && !!errors.location}
                                     helperText={touched.location && errors.location}
                                 />
 
+                                {/* Display location suggestions */}
+                                {suggestions.length > 0 && (
+                                    <Box sx={{
+                                        position: 'absolute',
+                                        top: '100%', // Position the list below the input
+                                        left: 0,
+                                        right: 0,
+                                        backgroundColor: 'white',
+                                        border: '1px solid #E5E5E5',
+                                        borderRadius: '8px',
+                                        maxHeight: '200px',
+                                        overflowY: 'auto',
+                                        zIndex: 10, // Ensure it's above other elements
+                                    }}>
+                                        <List sx={{ padding: 0 }}>
+                                            {suggestions.map((suggestion) => (
+                                                <ListItem
+                                                    button
+                                                    key={suggestion.place_id}
+                                                    onClick={() => handleSuggestionSelect(suggestion)}
+                                                    sx={{ padding: '8px 16px', color: 'black' }} // Added padding for each item
+                                                >
+                                                    <ListItemText primary={suggestion.description} />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </Box>
+                                )}
+
                                 <FormControl fullWidth>
                                     <DatePicker
                                         label="Check-In"
-                                        value={values.startDate ? parseISO(values.startDate) : null} // Corrected the date handling
+                                        value={values.startDate ? parseISO(values.startDate) : null}
                                         onChange={(newValue) => setFieldValue('startDate', format(newValue, 'yyyy-MM-dd'))}
                                         shouldDisableDate={shouldDisableDate}
                                         renderInput={(params) => (
@@ -118,7 +190,7 @@ const Navbar = () => {
                                 <FormControl fullWidth>
                                     <DatePicker
                                         label="Check-Out"
-                                        value={values.endDate ? parseISO(values.endDate) : null} // Corrected the date handling
+                                        value={values.endDate ? parseISO(values.endDate) : null}
                                         onChange={(newValue) => setFieldValue('endDate', format(newValue, 'yyyy-MM-dd'))}
                                         shouldDisableDate={shouldDisableDate}
                                         renderInput={(params) => (
