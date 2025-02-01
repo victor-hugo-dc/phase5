@@ -143,13 +143,12 @@ class Autocomplete(Resource):
 class AvailableProperties(Resource):
     def post(self):
         data = request.get_json()
-
-        if 'place_id' in data:
-            lat, lng = get_coordinates(data.get('place_id'))
-            if lat is None or lng is None:
-                return {'message': 'Invalid place_id or coordinates not found.'}, 400
+        
+        place_id = data.get('place_id')
+        if place_id == '':
+            lat = lng = None
         else:
-            lat = lng = None  # No filtering by location if place_id is not provided
+            lat, lng = get_coordinates(place_id)
         
         start_date = data.get('start_date')
         end_date = data.get('end_date')
