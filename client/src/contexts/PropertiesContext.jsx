@@ -46,7 +46,7 @@ export const PropertiesProvider = ({ children }) => {
     };
 
     return (
-        <PropertiesContext.Provider value={{ properties, loadMore }}>
+        <PropertiesContext.Provider value={{ properties, loadMore, setProperties }}>
             {children}
         </PropertiesContext.Provider>
     );

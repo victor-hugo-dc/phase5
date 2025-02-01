@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
     AppBar,
     Toolbar,
@@ -24,6 +24,7 @@ import { Link } from 'react-router-dom';
 import { format, isBefore, parseISO } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers';
 import axios from 'axios'; // Make sure you have axios for API requests
+import { PropertiesContext } from '../contexts/PropertiesContext';
 
 const Navbar = () => {
     const { token, userId } = useAuth(); // Use AuthContext to get token/userId
@@ -31,6 +32,7 @@ const Navbar = () => {
     const [location, setLocation] = useState(''); // Location input value
     const [placeId, setPlaceId] = useState(''); // Store place ID
     const [suggestions, setSuggestions] = useState([]); // Store suggestions
+    const { setProperties } = useContext(PropertiesContext);
     const navigate = useNavigate();
 
     const validationSchema = Yup.object({
@@ -118,11 +120,12 @@ const Navbar = () => {
                                     start_date: values.startDate,
                                     end_date: values.endDate,
                                 };
-
+            
                                 const response = await axios.post('http://localhost:5000/search', requestData);
-
+            
                                 console.log('Available Properties:', response.data.available_properties);
-
+                                setProperties(response.data.available_properties);
+            
                             } catch (error) {
                                 console.error('Error posting to search:', error);
                             }
