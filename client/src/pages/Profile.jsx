@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Container, Typography, Box, Button, Grid, Paper, Divider } from '@mui/material';
+import { Container, Typography, Box, Button, Divider, Paper, IconButton } from '@mui/material';
+import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 
 const Profile = () => {
     const { token, userId, logout } = useAuth();
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const scrollRef = useRef(null);
 
-    // Ensure we check the token and userId values
     useEffect(() => {
         if (!token || !userId) {
             alert('You are not logged in!');
@@ -30,79 +31,65 @@ const Profile = () => {
         fetchUserData();
     }, [token, userId]);
 
-    if (loading) {
-        return <Typography>Loading...</Typography>;
-    }
+    const scroll = (direction) => {
+        if (scrollRef.current) {
+            const { scrollLeft, clientWidth } = scrollRef.current;
+            const scrollAmount = direction === 'left' ? -clientWidth : clientWidth;
+            scrollRef.current.scrollTo({ left: scrollLeft + scrollAmount, behavior: 'smooth' });
+        }
+    };
 
-    if (error) {
-        return <Typography color="error">{error}</Typography>;
-    }
+    if (loading) return <Typography>Loading...</Typography>;
+    if (error) return <Typography color="error">{error}</Typography>;
 
     return (
         <Container>
             <Box my={4}>
-                <Typography variant="h4" gutterBottom>
-                    Profile - {userData.name}
-                </Typography>
+                <Typography variant="h3" fontWeight="bold">About {userData.name}</Typography>
+                <Button variant="contained" sx={{ mt: 1 }}>Edit Profile</Button>
+                <Divider sx={{ my: 3 }} />
 
-                <Paper sx={{ padding: 3 }}>
-                    <Typography variant="h6">User Information</Typography>
-                    <Divider sx={{ marginY: 2 }} />
-                    <Typography><strong>Name:</strong> {userData.name}</Typography>
-                    <Typography><strong>Email:</strong> {userData.email}</Typography>
-
-                    <Typography variant="h6" sx={{ marginTop: 3 }}>
-                        Booked Properties
-                    </Typography>
-                    {userData.booked_properties.length > 0 ? (
-                        userData.booked_properties.map((property) => (
-                            <Box key={property.id} sx={{ marginY: 2 }}>
-                                <Paper sx={{ padding: 2 }}>
-                                    <Typography variant="h6">{property.title}</Typography>
-                                    <Typography>{property.description}</Typography>
-                                    <Typography>
-                                        <strong>Location:</strong> {property.location_name}
-                                    </Typography>
-                                    <Typography>
-                                        <strong>Price per night:</strong> ${property.price_per_night.toFixed(2)}
-                                    </Typography>
-                                    <Typography>
-                                        <strong>Booking Dates:</strong> {property.bookings[0].start_date} to {property.bookings[0].end_date}
-                                    </Typography>
-                                </Paper>
-                            </Box>
-                        ))
-                    ) : (
-                        <Typography>No booked properties found.</Typography>
-                    )}
-
-                    <Typography variant="h6" sx={{ marginTop: 3 }}>
-                        Owned Properties
-                    </Typography>
+                <Typography variant="h5">Owned Properties</Typography>
+                <Box sx={{ display: 'flex', overflowX: 'auto', gap: 2, py: 2 }}>
                     {userData.owned_properties.length > 0 ? (
                         userData.owned_properties.map((property) => (
-                            <Box key={property.id} sx={{ marginY: 2 }}>
-                                <Paper sx={{ padding: 2 }}>
-                                    <Typography variant="h6">{property.title}</Typography>
-                                    <Typography>{property.description}</Typography>
-                                    <Typography>
-                                        <strong>Location:</strong> {property.location_name}
-                                    </Typography>
-                                    <Typography>
-                                        <strong>Price per night:</strong> ${property.price_per_night.toFixed(2)}
-                                    </Typography>
-                                </Paper>
-                            </Box>
+                            <Paper key={property.id} sx={{ minWidth: 300, padding: 2 }}>
+                                <Typography variant="h6">{property.title}</Typography>
+                                <Typography>{property.description}</Typography>
+                                <Typography><strong>Location:</strong> {property.location_name}</Typography>
+                                <Typography><strong>Price per night:</strong> ${property.price_per_night.toFixed(2)}</Typography>
+                            </Paper>
                         ))
                     ) : (
                         <Typography>No owned properties found.</Typography>
                     )}
-                </Paper>
+                </Box>
+
+                <Divider sx={{ my: 3 }} />
+
+                <Typography variant="h5">Booked Properties</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                    <IconButton onClick={() => scroll('left')}><ArrowBackIos /></IconButton>
+                    <Box ref={scrollRef} sx={{ display: 'flex', overflowX: 'hidden', scrollBehavior: 'smooth', gap: 2, flexGrow: 1, py: 2 }}>
+                        {userData.booked_properties.length > 0 ? (
+                            userData.booked_properties.map((property) => (
+                                <Paper key={property.id} sx={{ width: 400, padding: 2 }}>
+                                    <Typography variant="h6">{property.title}</Typography>
+                                    <Typography>{property.description}</Typography>
+                                    <Typography><strong>Location:</strong> {property.location_name}</Typography>
+                                    <Typography><strong>Price per night:</strong> ${property.price_per_night.toFixed(2)}</Typography>
+                                    <Typography><strong>Booking Dates:</strong> {property.bookings[0].start_date} to {property.bookings[0].end_date}</Typography>
+                                </Paper>
+                            ))
+                        ) : (
+                            <Typography>No booked properties found.</Typography>
+                        )}
+                    </Box>
+                    <IconButton onClick={() => scroll('right')}><ArrowForwardIos /></IconButton>
+                </Box>
 
                 <Box mt={4}>
-                    <Button variant="outlined" color="error" onClick={logout}>
-                        Logout
-                    </Button>
+                    <Button variant="outlined" color="error" onClick={logout}>Logout</Button>
                 </Box>
             </Box>
         </Container>
