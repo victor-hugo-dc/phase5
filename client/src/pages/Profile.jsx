@@ -1,35 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useRef } from 'react';
+import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import { Container, Typography, Box, Button, Divider, Paper, IconButton } from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 
 const Profile = () => {
-    const { token, userId, logout } = useAuth();
-    const [userData, setUserData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { userData, loading, error } = useProfile();
+    const { logout } = useAuth();
     const scrollRef = useRef(null);
-
-    useEffect(() => {
-        if (!token || !userId) {
-            alert('You are not logged in!');
-            return;
-        }
-
-        const fetchUserData = async () => {
-            try {
-                const response = await axios.get(`http://localhost:5000/users/${userId}`);
-                setUserData(response.data);
-                setLoading(false);
-            } catch (err) {
-                setError('Failed to fetch user data');
-                setLoading(false);
-            }
-        };
-
-        fetchUserData();
-    }, [token, userId]);
 
     const scroll = (direction) => {
         if (scrollRef.current) {
@@ -41,6 +19,7 @@ const Profile = () => {
 
     if (loading) return <Typography>Loading...</Typography>;
     if (error) return <Typography color="error">{error}</Typography>;
+    if (!userData) return <Typography>No user data available.</Typography>;
 
     return (
         <Container>
