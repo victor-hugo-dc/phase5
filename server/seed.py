@@ -45,14 +45,14 @@ def seed_data():
 
         # Create Properties
         properties = []
-        for owner in random.sample(users, k=15):  # Randomly assign 15 users as property owners
+        for owner in random.sample(users, k=80):  # Randomly assign 15 users as property owners
             for _ in range(random.randint(1, 3)):  # Each owner can own 1-3 properties
                 city_name, latitude, longitude = random.choice(city_locations)
                 property = Property(
                     title=fake.text(max_nb_chars=20),
                     description=fake.text(max_nb_chars=100),
                     price_per_night=random.uniform(50, 500),
-                    location_name=fake.city(),
+                    location_name=city_name,
                     latitude=latitude,
                     longitude=longitude,
                     owner_id=owner.id
