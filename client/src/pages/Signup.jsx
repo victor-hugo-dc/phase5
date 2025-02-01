@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { TextField, Button, Box } from '@mui/material';
+import { TextField, Button, Box, Typography, Link, Alert, Container } from '@mui/material';
 
 const Signup = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [signupError, setSignupError] = useState('');
 
     // Validation Schema using Yup
     const validationSchema = Yup.object({
@@ -22,37 +23,45 @@ const Signup = () => {
     const handleSignup = async (values) => {
         try {
             const { name, email, password } = values;
-            // Sending the signup request to your Flask API
-            const response = await axios.post('http://localhost:5000/signup', {
-                name,
-                email,
-                password
-            });
+            await axios.post('http://localhost:5000/signup', { name, email, password });
 
             const isLoginSuccessful = await login(email, password);
 
             if (isLoginSuccessful) {
                 navigate('/profile');
             } else {
-                alert('Login failed! Please check your credentials.');
+                setSignupError('Login failed! Please check your credentials.');
             }
         } catch (error) {
             console.error('Signup error:', error);
-            alert('Signup failed: ' + (error.response?.data?.error || 'Unknown error'));
+            setSignupError('Signup failed: ' + (error.response?.data?.error || 'Unknown error'));
         }
     };
 
     return (
-        <Box sx={{ width: 400, margin: '0 auto', padding: 2 }}>
-            <h2>Sign Up</h2>
+        <Container maxWidth="sm" sx={{ padding: 3 }}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Typography variant="h4" sx={{ fontWeight: 600 }}>
+                    Sign Up
+                </Typography>
+            </Box>
+
+            {/* Error Message */}
+            {signupError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {signupError}
+                </Alert>
+            )}
+
+            {/* Formik Form */}
             <Formik
                 initialValues={{ name: '', email: '', password: '' }}
                 validationSchema={validationSchema}
                 onSubmit={handleSignup}
             >
-                {({ values, handleChange, handleBlur }) => (
+                {({ values, handleChange, handleBlur, touched, errors, isSubmitting }) => (
                     <Form>
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ mb: 3 }}>
                             <Field
                                 name="name"
                                 as={TextField}
@@ -62,12 +71,12 @@ const Signup = () => {
                                 value={values.name}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                error={!!values.name && values.name.length < 1}
-                                helperText={<ErrorMessage name="name" />}
+                                error={touched.name && !!errors.name}
+                                helperText={touched.name && errors.name}
                             />
                         </Box>
 
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ mb: 3 }}>
                             <Field
                                 name="email"
                                 as={TextField}
@@ -77,12 +86,12 @@ const Signup = () => {
                                 value={values.email}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                error={!!values.email && values.email.length < 1}
-                                helperText={<ErrorMessage name="email" />}
+                                error={touched.email && !!errors.email}
+                                helperText={touched.email && errors.email}
                             />
                         </Box>
 
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ mb: 3 }}>
                             <Field
                                 name="password"
                                 as={TextField}
@@ -93,20 +102,42 @@ const Signup = () => {
                                 value={values.password}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                error={!!values.password && values.password.length < 6}
-                                helperText={<ErrorMessage name="password" />}
+                                error={touched.password && !!errors.password}
+                                helperText={touched.password && errors.password}
                             />
                         </Box>
 
-                        <Box sx={{ mb: 2 }}>
-                            <Button type="submit" variant="contained" fullWidth>
+                        <Box sx={{ mb: 3 }}>
+                            <Button 
+                                type="submit" 
+                                variant="contained" 
+                                fullWidth 
+                                disabled={isSubmitting}
+                                sx={{
+                                    padding: '12px',
+                                    fontSize: '16px',
+                                    textTransform: 'none',
+                                    '&:hover': {
+                                        backgroundColor: '#263FBB'
+                                    }
+                                }}
+                            >
                                 Sign Up
                             </Button>
+                        </Box>
+
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="body2">
+                                Already have an account?{' '}
+                                <Link href="/auth/login" sx={{ textDecoration: 'none', fontWeight: '600' }}>
+                                    Log In
+                                </Link>
+                            </Typography>
                         </Box>
                     </Form>
                 )}
             </Formik>
-        </Box>
+        </Container>
     );
 };
 
