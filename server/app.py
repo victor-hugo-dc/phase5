@@ -60,6 +60,28 @@ class UserResource(Resource):
             return user_schema.dump(user)
         return users_schema.dump(User.query.all())
 
+    @jwt_required()
+    def put(self, user_id):
+        current_user_id = get_jwt_identity()
+        if current_user_id != user_id:
+            return {"error": "You can only update your own information."}, 403
+        
+        data = request.get_json()
+        new_name = data.get('name')
+
+        if not new_name:
+            return {"error": "Name is required."}, 400
+        
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found."}, 404
+        
+        # Update the user's name
+        user.name = new_name
+        db.session.commit()
+
+        return {"message": "User name updated successfully."}, 200
+
 
 class PropertyResource(Resource):
     def get(self, property_id=None):
@@ -103,6 +125,37 @@ class BookingResource(Resource):
         db.session.commit()
 
         return {"message": "Booking created successfully"}, 201
+
+    @jwt_required()
+    def put(self, booking_id):
+        user_id = get_jwt_identity()
+        booking = Booking.query.get(booking_id)
+        
+        if not booking:
+            return {"error": "Booking not found."}, 404
+        
+        if booking.user_id != user_id:
+            return {"error": "You can only edit your own bookings."}, 403
+
+        data = request.get_json()
+        if "start_date" in data:
+            try:
+                data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            except ValueError:
+                return {"error": "Invalid start date format. Use YYYY-MM-DD."}, 400
+
+        if "end_date" in data:
+            try:
+                data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+            except ValueError:
+                return {"error": "Invalid end date format. Use YYYY-MM-DD."}, 400
+
+        for key, value in data.items():
+            setattr(booking, key, value)
+
+        db.session.commit()
+
+        return {"message": "Booking updated successfully."}, 200
 
 
 class ReviewResource(Resource):
@@ -198,7 +251,7 @@ api.add_resource(AvailableProperties, '/search')
 
 api.add_resource(UserResource, '/users', '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')
-api.add_resource(BookingResource, '/bookings')
+api.add_resource(BookingResource, '/bookings', '/bookings/<int:booking_id>')
 api.add_resource(ReviewResource, '/reviews')
 
 if __name__ == '__main__':
