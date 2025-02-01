@@ -66,7 +66,12 @@ class PropertyResource(Resource):
         if property_id:
             property_ = Property.query.get(property_id)
             return property_schema.dump(property_) if property_ else {"error": "Property not found"}, 404
-        return properties_schema.dump(Property.query.all())
+
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 12, type=int)
+        properties = Property.query.paginate(page=page, per_page=limit, error_out=False)
+
+        return properties_schema.dump(properties.items)
 
     @jwt_required()
     def post(self):
