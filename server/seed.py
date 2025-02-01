@@ -9,6 +9,21 @@ from models import db, User, Property, Booking, Review, UserSchema, PropertySche
 # Initialize Faker
 fake = Faker()
 
+# Define some major cities and their latitudes/longitudes
+city_locations = [
+    ("New York", 40.7128, -74.0060),
+    ("Los Angeles", 34.0522, -118.2437),
+    ("Chicago", 41.8781, -87.6298),
+    ("Houston", 29.7604, -95.3698),
+    ("Phoenix", 33.4484, -112.0740),
+    ("San Antonio", 29.4241, -98.4936),
+    ("San Diego", 32.7157, -117.1611),
+    ("Dallas", 32.7767, -96.7970),
+    ("San Jose", 37.3382, -121.8863),
+    ("Austin", 30.2672, -97.7431),
+    # Add more cities as needed for testing
+]
+
 # Create Seed Data
 def seed_data():
     with app.app_context():
@@ -17,7 +32,7 @@ def seed_data():
 
         # Create Users
         users = []
-        for _ in range(20):  # Increased the number of users to 20
+        for _ in range(100):  # Increased the number of users to 20
             user = User(
                 name=fake.name(),
                 email=fake.email(),
@@ -32,13 +47,14 @@ def seed_data():
         properties = []
         for owner in random.sample(users, k=15):  # Randomly assign 15 users as property owners
             for _ in range(random.randint(1, 3)):  # Each owner can own 1-3 properties
+                city_name, latitude, longitude = random.choice(city_locations)
                 property = Property(
                     title=fake.text(max_nb_chars=20),
                     description=fake.text(max_nb_chars=100),
                     price_per_night=random.uniform(50, 500),
                     location_name=fake.city(),
-                    latitude=fake.latitude(),
-                    longitude=fake.longitude(),
+                    latitude=latitude,
+                    longitude=longitude,
                     owner_id=owner.id
                 )
 
@@ -46,7 +62,7 @@ def seed_data():
                 db.session.flush()  # Flush to generate an ID before adding images
 
                 # Add at least one image before committing
-                num_images = random.randint(1, 10)  # Each property gets between 1 and 10 images
+                num_images = random.randint(4, 10)  # Each property gets between 1 and 10 images
                 images = [
                     PropertyImage(
                         image_path=fake.image_url(),  # Simulated image file path
@@ -70,7 +86,7 @@ def seed_data():
                 # Make sure the user doesn't book their own property
                 if property.owner_id != user.id:
                     # Use datetime to create date objects
-                    start_date = datetime(2025, 1, 30) + timedelta(days=random.randint(0, 30))  # Near future
+                    start_date = datetime(2025, 1, 31) + timedelta(days=random.randint(0, 30))  # Near future
                     end_date = start_date + timedelta(days=random.randint(1, 7))  # Booking length 1-7 days
 
                     # Ensure no conflicting bookings
@@ -92,7 +108,7 @@ def seed_data():
 
         # Create Reviews
         for booking in Booking.query.all():
-            if random.random() < 0.7:  # 70% chance of leaving a review
+            if random.random() < 0.85:  # 70% chance of leaving a review
                 review = Review(
                     user_id=booking.user_id,
                     property_id=booking.property_id,
