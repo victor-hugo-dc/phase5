@@ -86,7 +86,14 @@ class BookingResource(Resource):
         user_id = get_jwt_identity()
         data = request.get_json()
 
-        new_booking = Booking(**data, user_id=user_id)
+        try:
+            data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+        except (ValueError, KeyError):
+            return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+        # Create a new booking
+        new_booking = Booking(**data)
         db.session.add(new_booking)
         db.session.commit()
 

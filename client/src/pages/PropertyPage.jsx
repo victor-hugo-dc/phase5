@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { PropertiesContext } from '../contexts/PropertiesContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, Typography, Card, CardMedia, CardContent, Button, Divider, FormControl } from '@mui/material';
+import { Box, Typography, Card, CardMedia, CardContent, Button, Divider, FormControl, Grid } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { format, addDays, isBefore, parseISO } from 'date-fns';
 import { Formik, Form } from 'formik';
@@ -70,7 +70,33 @@ const PropertyPage = () => {
     return (
         <Box sx={{ padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Card sx={{ maxWidth: 800, width: '100%' }}>
-                <CardMedia component="img" height="400" image={property.image_url} alt={property.title} />
+                <Card sx={{ maxWidth: 1200, width: '100%', display: 'flex' }}>
+                    {/* Main Image on the Left */}
+                    <CardMedia
+                        component="img"
+                        sx={{ width: '60%', height: 400, objectFit: 'cover' }}
+                        image={property.images[0].image_path}
+                        alt={property.title}
+                    />
+                    {/* Additional Images Grid on the Right */}
+                    <Box sx={{ width: '40%', padding: 2 }}>
+                        <Grid container spacing={2}>
+                            {property.images.slice(1, 5).map((image, index) => (
+                                <Grid item xs={6} key={index}>
+                                    <Card sx={{ width: '100%', height: 180 }}>
+                                        <CardMedia
+                                            component="img"
+                                            height="100%"
+                                            image={image.image_path}
+                                            alt={`Property Image ${index + 1}`}
+                                            sx={{ objectFit: 'cover' }}
+                                        />
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Box>
+                </Card>
                 <CardContent>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{property.title}</Typography>
                     <Typography variant="body1" color="text.secondary">{property.location_name}</Typography>
@@ -82,7 +108,7 @@ const PropertyPage = () => {
                         validationSchema={validationSchema}
                         onSubmit={async (values) => {
                             try {
-                                await axios.post('/bookings', {
+                                await axios.post('http://localhost:5000/bookings', {
                                     property_id: property.id,
                                     start_date: values.checkInDate,
                                     end_date: values.checkOutDate,
