@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 
-UPLOAD_FOLDER = "images"
+UPLOAD_FOLDER = os.path.abspath(os.path.join(os.getcwd(), "images"))
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
 if not os.path.exists(UPLOAD_FOLDER):
