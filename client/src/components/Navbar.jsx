@@ -23,15 +23,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { format, isBefore, parseISO } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers';
-import axios from 'axios'; // Make sure you have axios for API requests
+import axios from 'axios';
 import { PropertiesContext } from '../contexts/PropertiesContext';
 
 const Navbar = () => {
-    const { token, userId } = useAuth(); // Use AuthContext to get token/userId
-    const [anchorEl, setAnchorEl] = useState(null); // State for managing menu
-    const [location, setLocation] = useState(''); // Location input value
-    const [placeId, setPlaceId] = useState(''); // Store place ID
-    const [suggestions, setSuggestions] = useState([]); // Store suggestions
+    const { token } = useAuth();
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [location, setLocation] = useState('');
+    const [placeId, setPlaceId] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
     const { setProperties } = useContext(PropertiesContext);
     const navigate = useNavigate();
 
@@ -53,7 +53,6 @@ const Navbar = () => {
     };
 
     const handleLogout = () => {
-        // Handle logout functionality (clear token, userId, etc.)
         handleMenuClose();
         navigate('/auth/login');
     };
@@ -66,7 +65,6 @@ const Navbar = () => {
         const value = e.target.value;
         setLocation(value);
 
-        // Fetch location suggestions when typing
         if (value) {
             try {
                 const response = await axios.post('http://localhost:5000/autocomplete', { location: value });
@@ -231,7 +229,7 @@ const Navbar = () => {
                         {token ? (
                             <>
                                 <MenuItem onClick={() => navigate('/')}>Trips</MenuItem>
-                                <MenuItem onClick={() => navigate('/')}>Host Your Home</MenuItem>
+                                <MenuItem onClick={() => navigate('/host-home')}>Host Your Home</MenuItem>
                                 <MenuItem onClick={() => navigate('/profile')}>Account</MenuItem>
                                 <MenuItem onClick={handleLogout}>Log Out</MenuItem>
                             </>

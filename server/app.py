@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 from marshmallow import ValidationError
-from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema
+from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema, PropertyImage
 from config import app, db, api, jwt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import os
@@ -9,8 +9,15 @@ import requests
 from dotenv import load_dotenv
 import datetime
 from utils import get_coordinates, haversine
+from werkzeug.utils import secure_filename
 
 load_dotenv()
+
+UPLOAD_FOLDER = "images"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
@@ -98,13 +105,47 @@ class PropertyResource(Resource):
     @jwt_required()
     def post(self):
         user_id = get_jwt_identity()
-        data = request.get_json()
+        
+        title = request.form.get("title")
+        description = request.form.get("description")
+        price_per_night = request.form.get("price_per_night")
+        location_name = request.form.get("location")
+        latitude, longitude = get_coordinates(request.form.get("place_id"))
+        images = request.files.getlist("images")
 
-        new_property = Property(**data, owner_id=user_id)  # Assume property has an owner_id field
+        if not title or not description or not price_per_night:
+            return {"error": "Missing required fields"}, 400
+
+        new_property = Property(
+            title=title,
+            description=description,
+            price_per_night=float(price_per_night),
+            location_name=location_name,
+            latitude=float(latitude),
+            longitude=float(longitude),
+            owner_id=user_id,
+        )
+
         db.session.add(new_property)
         db.session.commit()
 
-        return property_schema.dump(new_property), 201
+        # Save images and associate with property
+        for image in images:
+            if image.filename == "" or "." not in image.filename:
+                continue
+
+            ext = image.filename.rsplit(".", 1)[1].lower()
+            if ext in ALLOWED_EXTENSIONS:
+                filename = secure_filename(image.filename)
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                image.save(filepath)
+
+                property_image = PropertyImage(image_path=filepath, property_id=new_property.id)
+                db.session.add(property_image)
+
+        db.session.commit()
+
+        return {"message": "Property created successfully!", "property": new_property.id}, 201
 
 
 class BookingResource(Resource):

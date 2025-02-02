@@ -36,6 +36,7 @@ export default function Router() {
             children: [
                 { path: "host/:id", element: <HostPage/>},
                 { path: "profile", element: <ProfilePage /> },
+                { path: "host-home", element: <HostHomePage /> },
             ],
         },
     ]);
@@ -47,3 +48,4 @@ const LoginPage = Loadable(lazy(() => import("../pages/Login")));
 const ProfilePage = Loadable(lazy(() => import("../pages/Profile")));
 const PropertyPage = Loadable(lazy(() => import("../pages/PropertyPage")));
 const SignupPage = Loadable(lazy(() => import("../pages/Signup")));
+const HostHomePage = Loadable(lazy(() => import("../pages/HostHome")));
