@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_restful import Api, Resource
 from marshmallow import ValidationError
 from models import User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema, PropertyImage
@@ -89,6 +89,10 @@ class UserResource(Resource):
 
         return {"message": "User name updated successfully."}, 200
 
+class ImageResource(Resource):
+    def get(self, filename):
+        images_dir = os.path.join(os.getcwd(), 'images')
+        return send_from_directory(images_dir, filename)
 
 class PropertyResource(Resource):
     def get(self, property_id=None):
@@ -289,6 +293,7 @@ api.add_resource(LoginResource, '/login')
 api.add_resource(Autocomplete, '/autocomplete')
 
 api.add_resource(AvailableProperties, '/search')
+api.add_resource(ImageResource, '/images/<string:filename>')
 
 api.add_resource(UserResource, '/users', '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')

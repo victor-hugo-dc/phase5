@@ -12,7 +12,7 @@ const PropertyCard = ({ property }) => {
         navigate(`/host/${owner?.id}`);
     };
 
-    const firstImage = images?.length > 0 ? images[0].image_path : 'https://via.placeholder.com/300'; // Default placeholder if no images
+    const firstImage = images?.length > 0 ? `http://localhost:5000/images/${images[0].image_path}` : 'https://via.placeholder.com/300'; // Default placeholder if no images
 
     const styles = {
         card: {

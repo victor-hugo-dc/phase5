@@ -5,9 +5,13 @@ from faker import Faker
 import random
 from datetime import datetime, timedelta
 from models import db, User, Property, Booking, Review, UserSchema, PropertySchema, BookingSchema, ReviewSchema, PropertyImage
+import os
 
 # Initialize Faker
 fake = Faker()
+
+IMAGES = os.path.abspath(os.path.join(os.getcwd(), "images"))
+FILES = [f for f in os.listdir(IMAGES) if f.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp'))]
 
 # Define some major cities and their latitudes/longitudes
 city_locations = [
@@ -65,7 +69,7 @@ def seed_data():
                 num_images = random.randint(4, 10)  # Each property gets between 1 and 10 images
                 images = [
                     PropertyImage(
-                        image_path=fake.image_url(),  # Simulated image file path
+                        image_path=random.choice(FILES),
                         property_id=property.id,  # Now property_id exists
                     )
                     for _ in range(num_images)

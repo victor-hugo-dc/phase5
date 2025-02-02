@@ -17,7 +17,7 @@ const ImageGrid = ({ images }) => {
                 <Grid container>
                     <Grid item xs={12}>
                         <img
-                            src={images[0].image_path}
+                            src={`http://localhost:5000/images/${images[0].image_path}`}
                             alt="Property"
                             style={{
                                 width: '100%',
@@ -39,7 +39,7 @@ const ImageGrid = ({ images }) => {
                     {images.slice(0, 2).map((image, index) => (
                         <Grid item xs={6} key={index} sx={{ padding: 0 }}>
                             <img
-                                src={image.image_path}
+                                src={`http://localhost:5000/images/${image.image_path}`}
                                 alt={`Property ${index + 1}`}
                                 style={{
                                     width: '100%',
@@ -60,7 +60,7 @@ const ImageGrid = ({ images }) => {
             <Grid container spacing={0}>
                 <Grid item xs={6} sx={{ padding: 0 }}>
                     <img
-                        src={images[0].image_path}
+                        src={`http://localhost:5000/images/${images[0].image_path}`}
                         alt="Property"
                         style={{
                             width: '100%',
@@ -76,7 +76,7 @@ const ImageGrid = ({ images }) => {
                     {images.slice(1, 5).map((image, index) => (
                         <Grid item xs={6} key={index} spacing={0} sx={{ padding: 0 }}>
                             <img
-                                src={image.image_path}
+                                src={`http://localhost:5000/images/${image.image_path}`}
                                 alt={`Property ${index + 1}`}
                                 style={{
                                     width: '100%',
@@ -129,7 +129,7 @@ const ImageGrid = ({ images }) => {
                         {images.map((image, index) => (
                             <img
                                 key={index}
-                                src={image.image_path}
+                                src={`http://localhost:5000/images/${image.image_path}`}
                                 alt={`Property ${index + 1}`}
                                 style={{
                                     maxWidth: 500,
