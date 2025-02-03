@@ -18,6 +18,7 @@ import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import ImageGrid from '../components/ImageGrid';
+import StarRating from '../components/StarRating';
 
 const PropertyPage = () => {
     const { properties } = useContext(PropertiesContext);
@@ -129,8 +130,7 @@ const PropertyPage = () => {
                     {property.reviews.length > 0 ? (
                         property.reviews.map((review) => (
                             <Box key={review.id} sx={{ marginTop: 2, padding: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-                                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>User {review.user_id}</Typography>
-                                <Typography variant="body2">Rating: {review.rating} / 5</Typography>
+                                <StarRating rating={review.rating} />
                                 <Typography variant="body2">{review.comment}</Typography>
                             </Box>
                         ))

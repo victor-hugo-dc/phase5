@@ -144,7 +144,7 @@ class PropertyResource(Resource):
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 image.save(filepath)
 
-                property_image = PropertyImage(image_path=filepath, property_id=new_property.id)
+                property_image = PropertyImage(image_path=filename, property_id=new_property.id)
                 db.session.add(property_image)
 
         db.session.commit()
