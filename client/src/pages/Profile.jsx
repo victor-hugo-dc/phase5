@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Container, Typography, Box, Button, Divider, Paper, IconButton } from '@mui/material';
+import { Container, Typography, Box, Button, Divider, Paper, IconButton, CardMedia, Card, CardContent } from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 
 const Profile = () => {
@@ -32,12 +32,22 @@ const Profile = () => {
                 <Box sx={{ display: 'flex', overflowX: 'auto', gap: 2, py: 2 }}>
                     {userData.owned_properties.length > 0 ? (
                         userData.owned_properties.map((property) => (
-                            <Paper key={property.id} sx={{ minWidth: 300, padding: 2 }}>
-                                <Typography variant="h6">{property.title}</Typography>
-                                <Typography>{property.description}</Typography>
-                                <Typography><strong>Location:</strong> {property.location_name}</Typography>
-                                <Typography><strong>Price per night:</strong> ${property.price_per_night.toFixed(2)}</Typography>
-                            </Paper>
+                            <Card key={property.id}>
+                                <CardMedia
+                                    component="img"
+                                    image={`http://localhost:5000/images/${property.images[0].image_path}`}
+                                    alt={property.title}
+                                    sx={{ height: 200, minWidth: 300, objectFit: 'cover' }}
+                                />
+                                <CardContent>
+                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                        {property.title}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {property.location_name}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
                         ))
                     ) : (
                         <Typography>No owned properties found.</Typography>
