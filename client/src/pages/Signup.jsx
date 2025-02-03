@@ -28,7 +28,7 @@ const Signup = () => {
             const isLoginSuccessful = await login(email, password);
 
             if (isLoginSuccessful) {
-                navigate('/profile');
+                navigate('/');
             } else {
                 setSignupError('Login failed! Please check your credentials.');
             }
