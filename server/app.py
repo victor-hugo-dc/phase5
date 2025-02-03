@@ -152,6 +152,27 @@ class PropertyResource(Resource):
 
         return {"message": "Property created successfully!", "property": new_property.id}, 201
 
+    @jwt_required()
+    def put(self, property_id):
+        user_id = get_jwt_identity()
+        property_ = Property.query.get(property_id)
+        
+        if not property_:
+            return {"error": "Property not found"}, 404
+        
+        if property_.owner_id != user_id:
+            return {"error": "Unauthorized to edit this property"}, 403
+        
+        data = request.get_json()
+        
+        property_.title = data.get("title", property_.title)
+        property_.description = data.get("description", property_.description)
+        property_.price_per_night = data.get("price_per_night", property_.price_per_night)
+        property_.location_name = data.get("location_name", property_.location_name)
+        
+        db.session.commit()
+        
+        return property_schema.dump(property_), 200
 
 class BookingResource(Resource):
     @jwt_required()

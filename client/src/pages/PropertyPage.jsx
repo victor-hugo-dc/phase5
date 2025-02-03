@@ -11,6 +11,7 @@ import {
     Divider,
     FormControl,
     Stack,
+    TextField,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { format, addDays, isBefore, parseISO } from 'date-fns';
@@ -106,7 +107,7 @@ const PropertyPage = () => {
                     <Divider sx={{ marginTop: 3 }} />
 
                     {parseInt(userId, 10) === property.owner.id ? (
-                        <OwnerView property={property} />
+                        <OwnerView property={property} token={token} setProperty={setProperty}/>
                     ) : (
                         <GuestBookingForm 
                             property={property} 
@@ -180,25 +181,77 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
 };
 
 // Component for property owners managing bookings
-const OwnerView = ({ property }) => {
+const OwnerView = ({ property, token, setProperty }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        title: property.title,
+        location_name: property.location_name,
+        description: property.description,
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.put(
+                `http://localhost:5000/properties/${property.id}`,
+                formData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setProperty(response.data);
+            setIsEditing(false);
+            alert('Property updated successfully');
+        } catch {
+            alert('Error updating property');
+        }
+    };
+
     return (
         <Box sx={{ marginTop: 3 }}>
-            <Typography variant="h6">Manage Bookings</Typography>
-            {property.bookings.length > 0 ? (
-                property.bookings.map((booking) => (
-                    <Box key={booking.id} sx={{ marginTop: 2, padding: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-                        <Typography variant="body2">Booking ID: {booking.id}</Typography>
-                        <Typography variant="body2">User ID: {booking.user_id}</Typography>
-                        <Typography variant="body2">Dates: {booking.start_date} - {booking.end_date}</Typography>
-                        <Button variant="contained" color="secondary" sx={{ marginTop: 1 }}>Edit Booking</Button>
-                    </Box>
-                ))
+            <Typography variant="h6">Manage Property</Typography>
+            {isEditing ? (
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        fullWidth
+                        label="Title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        sx={{ marginBottom: 2 }}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Location"
+                        name="location_name"
+                        value={formData.location_name}
+                        onChange={handleInputChange}
+                        sx={{ marginBottom: 2 }}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        multiline
+                        rows={4}
+                        sx={{ marginBottom: 2 }}
+                    />
+                    <Button type="submit" variant="contained" color="primary">Save Changes</Button>
+                    <Button onClick={() => setIsEditing(false)} variant="outlined" sx={{ marginLeft: 2 }}>Cancel</Button>
+                </form>
             ) : (
-                <Typography variant="body2" sx={{ marginTop: 2 }}>No bookings yet.</Typography>
+                <Button variant="contained" color="warning" onClick={() => setIsEditing(true)}>
+                    Edit Property Listing
+                </Button>
             )}
-            <Button variant="contained" color="warning" sx={{ marginTop: 2 }}>Edit Property Listing</Button>
         </Box>
     );
 };
+
 
 export default PropertyPage;
