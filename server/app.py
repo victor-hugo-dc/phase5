@@ -95,10 +95,11 @@ class ImageResource(Resource):
         return send_from_directory(images_dir, filename)
 
 class PropertyResource(Resource):
+    # TODO: add 404 error if property not found
     def get(self, property_id=None):
         if property_id:
             property_ = Property.query.get(property_id)
-            return property_schema.dump(property_) if property_ else {"error": "Property not found"}, 404
+            return property_schema.dump(property_)
 
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 12, type=int)
