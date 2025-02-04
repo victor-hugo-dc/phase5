@@ -150,7 +150,7 @@ class PropertyResource(Resource):
 
         db.session.commit()
 
-        return {"message": "Property created successfully!", "property": new_property.id}, 201
+        return {"message": "Property created successfully!", "property": new_property.to_dict()}, 201
 
     @jwt_required()
     def put(self, property_id):

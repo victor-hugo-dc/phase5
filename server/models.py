@@ -46,7 +46,7 @@ class Property(db.Model):
         if len(self.images) > 10:
             raise ValidationError("A property can have at most 10 images.")
     
-    def to_dict(self, user_id):
+    def to_dict(self, user_id=None):
         return {
             "id": self.id,
             "title": self.title,
@@ -55,7 +55,10 @@ class Property(db.Model):
             "location_name": self.location_name,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "owner_id": self.owner_id,
+            "owner": {
+                "id": self.owner_id,
+                "name": self.owner.name,   
+            },
             "images": [{"image_path": img.image_path} for img in self.images],
             "bookings": [
                 {
@@ -64,7 +67,7 @@ class Property(db.Model):
                     "end_date": booking.end_date.strftime("%Y-%m-%d"),
                     "user_id": booking.user_id
                 }
-                for booking in self.bookings if user_id == booking.user_id
+                for booking in self.bookings if user_id is None or booking.user_id == user_id
             ],
             "reviews": [
                 {

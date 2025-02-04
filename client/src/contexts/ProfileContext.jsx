@@ -82,13 +82,15 @@ export const ProfileProvider = ({ children }) => {
             const response = await axios.post(
                 `http://localhost:5000/properties`,
                 propertyData,
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data'  } }
             );
             setUserData(prev => ({
                 ...prev,
-                owned_properties: [...prev.owned_properties, response.data]
+                owned_properties: [...prev.owned_properties, response.data.property]
             }));
-            setProperties(prev => [...prev, response.data]);
+            setProperties(prev => [...prev, response.data.property]);
+            console.log(response.data.property);
+            return response.data.property.id;
         } catch (err) {
             console.error('Error adding property:', err);
         }

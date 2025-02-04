@@ -3,11 +3,15 @@ import axios from 'axios';
 import { Box, TextField, Button, List, ListItem, ListItemText, Container } from '@mui/material';
 import { useFormik } from 'formik';
 import { useAuth } from '../contexts/AuthContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { useNavigate } from 'react-router-dom';
 
 const HostHome = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [placeId, setPlaceId] = useState('');
     const { token } = useAuth();
+    const { addProperty } = useProfile();
+    const navigate = useNavigate();
 
     const formik = useFormik({
         initialValues: {
@@ -26,17 +30,8 @@ const HostHome = () => {
             formData.append('place_id', placeId);
             values.images.forEach((image) => formData.append('images', image));
 
-            try {
-                const response = await axios.post('http://localhost:5000/properties', formData, {
-                    headers: { 
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data' 
-                    }
-                });
-                console.log("Home hosted successfully", response.data);
-            } catch (error) {
-                console.error("Error hosting home", error);
-            }
+            const id = await addProperty(formData);
+            navigate(`/property/${id}`);
         }
     });
 

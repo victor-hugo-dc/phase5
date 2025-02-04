@@ -61,7 +61,7 @@ const ProfileNavbar = () => {
                         {token ? (
                             <>
                                 <MenuItem onClick={() => navigate('/')}>Trips</MenuItem>
-                                <MenuItem onClick={() => navigate('/')}>Host Your Home</MenuItem>
+                                <MenuItem onClick={() => navigate('/host-home')}>Host Your Home</MenuItem>
                                 <MenuItem onClick={() => navigate('/profile')}>Account</MenuItem>
                                 <MenuItem onClick={handleLogout}>Log Out</MenuItem>
                             </>

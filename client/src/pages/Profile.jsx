@@ -57,7 +57,7 @@ const Profile = () => {
                     <Box ref={ownedScrollRef} sx={{ display: 'flex', overflowX: 'auto', scrollBehavior: 'smooth', gap: 2, flexGrow: 1, py: 2 }}>
                         {userData.owned_properties.length > 0 ? (
                             userData.owned_properties.map((property) => (
-                                <Card key={property.id} onClick={() => navigate(`/property/${property.id}`)} sx={{ cursor: 'pointer' }}>
+                                <Card key={property.id} onClick={() => navigate(`/property/${property.id}`)} sx={{ height: 350, minWidth: 300, objectFit: 'cover', cursor: 'pointer' }}>
                                     <CardMedia
                                         component="img"
                                         image={`http://localhost:5000/images/${property.images[0].image_path}`}
