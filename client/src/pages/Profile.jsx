@@ -84,7 +84,7 @@ const Profile = () => {
                     <IconButton onClick={() => scroll(bookedScrollRef, 'left')}><ArrowBackIos /></IconButton>
                     <Box ref={bookedScrollRef} sx={{ display: 'flex', overflowX: 'auto', scrollBehavior: 'smooth', gap: 2, flexGrow: 1, py: 2 }}>
                         {userData.booked_properties.length > 0 ? (
-                            userData.booked_properties.flatMap((property) => (
+                            userData.booked_properties.reverse().flatMap((property) => (
                                 property.bookings.map((booking, index) => (
                                     <Card key={`${property.id}-${index}`} sx={{ height: 350, minWidth: 300, objectFit: 'cover' }}>
                                         <CardMedia
@@ -96,7 +96,10 @@ const Profile = () => {
                                         <CardContent>
                                             <Typography variant="h6" sx={{ fontWeight: 700 }}>{property.title}</Typography>
                                             <Typography variant="body2" color="text.secondary">{property.location_name}</Typography>
-                                            <Typography>{booking.start_date} to {booking.end_date}</Typography>
+                                            <Typography>
+                                                {new Date(booking.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}-
+                                                {new Date(booking.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                            </Typography>
                                         </CardContent>
                                     </Card>
                                 ))
