@@ -43,11 +43,39 @@ class Property(db.Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # if len(self.images) == 0:
-        #     raise ValidationError("A property must have at least one image.")
         if len(self.images) > 10:
             raise ValidationError("A property can have at most 10 images.")
-
+    
+    def to_dict(self, user_id):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "price_per_night": self.price_per_night,
+            "location_name": self.location_name,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "owner_id": self.owner_id,
+            "images": [{"image_path": img.image_path} for img in self.images],
+            "bookings": [
+                {
+                    "id": booking.id,
+                    "start_date": booking.start_date.strftime("%Y-%m-%d"),
+                    "end_date": booking.end_date.strftime("%Y-%m-%d"),
+                    "user_id": booking.user_id
+                }
+                for booking in self.bookings if user_id == booking.user_id
+            ],
+            "reviews": [
+                {
+                    "id": review.id,
+                    "rating": review.rating,
+                    "comment": review.comment,
+                    "user_id": review.user_id
+                }
+                for review in self.reviews
+            ]
+        }
 
 class PropertyImage(db.Model):
     __tablename__ = 'property_images'
@@ -70,6 +98,17 @@ class Booking(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     user = db.relationship('User', back_populates='bookings')
     property = db.relationship('Property', back_populates='bookings')
+    
+    def to_dict(self):
+        booking_data = {
+            "id": self.id,
+            "user_id": self.user_id,
+            "property_id": self.property_id,
+            "start_date": self.start_date.strftime("%Y-%m-%d"),
+            "end_date": self.end_date.strftime("%Y-%m-%d")
+        }
+
+        return booking_data
 
 
 class Review(db.Model):

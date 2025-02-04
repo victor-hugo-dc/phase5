@@ -1,8 +1,9 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
 // Create the Context
 export const PropertiesContext = createContext();
+export const useProperties = () => useContext(PropertiesContext);
 
 export const PropertiesProvider = ({ children }) => {
     const [properties, setProperties] = useState([]);

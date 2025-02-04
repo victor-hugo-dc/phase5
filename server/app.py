@@ -190,8 +190,9 @@ class BookingResource(Resource):
         new_booking = Booking(**data)
         db.session.add(new_booking)
         db.session.commit()
-
-        return {"message": "Booking created successfully"}, 201
+        property = Property.query.get(data["property_id"])
+        booking = Booking.query.get(new_booking.id)
+        return {"message": "Booking created successfully", "property": property.to_dict(user_id = user_id), "booking": booking.to_dict()}, 201
 
     @jwt_required()
     def put(self, booking_id):

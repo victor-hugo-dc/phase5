@@ -74,7 +74,7 @@ const ImageGrid = ({ images }) => {
                 </Grid>
                 <Grid item xs={6} container spacing={0}>
                     {images.slice(1, 5).map((image, index) => (
-                        <Grid item xs={6} key={index} spacing={0} sx={{ padding: 0 }}>
+                        <Grid item xs={6} key={index} sx={{ padding: 0 }}>
                             <img
                                 src={`http://localhost:5000/images/${image.image_path}`}
                                 alt={`Property ${index + 1}`}

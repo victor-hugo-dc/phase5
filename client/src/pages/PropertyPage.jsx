@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PropertiesContext } from '../contexts/PropertiesContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -20,11 +20,13 @@ import * as Yup from 'yup';
 import axios from 'axios';
 import ImageGrid from '../components/ImageGrid';
 import StarRating from '../components/StarRating';
+import { useProfile } from '../contexts/ProfileContext';
 
 const PropertyPage = () => {
     const { properties } = useContext(PropertiesContext);
     const { token, userId } = useAuth();
     const { id } = useParams();
+    const { addBooking } = useProfile();
     
     const [property, setProperty] = useState(properties.find((p) => p.id.toString() === id) || null);
     const [loading, setLoading] = useState(!property);
@@ -115,7 +117,8 @@ const PropertyPage = () => {
                             token={token} 
                             defaultDates={defaultDates} 
                             shouldDisableDate={shouldDisableDate} 
-                            validationSchema={validationSchema} 
+                            validationSchema={validationSchema}
+                            addBooking={addBooking}
                         />
                     )}
 
@@ -137,24 +140,16 @@ const PropertyPage = () => {
 };
 
 // Component for guests booking a property
-const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisableDate, validationSchema }) => {
+const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisableDate, validationSchema, addBooking }) => {
+    const navigate = useNavigate();
     return (
         <Formik
             enableReinitialize
             initialValues={defaultDates}
             validationSchema={validationSchema}
             onSubmit={async (values) => {
-                try {
-                    await axios.post('http://localhost:5000/bookings', {
-                        property_id: property.id,
-                        start_date: values.checkInDate,
-                        end_date: values.checkOutDate,
-                        user_id: userId,
-                    }, { headers: { Authorization: `Bearer ${token}` } });
-                    alert('Booking created successfully');
-                } catch {
-                    alert('Error creating booking. Please try again.');
-                }
+                addBooking(property.id, values.checkInDate, values.checkInDate);
+                navigate('/profile');
             }}
         >
             {({ values, setFieldValue }) => (
