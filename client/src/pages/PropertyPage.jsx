@@ -12,6 +12,13 @@ import {
     FormControl,
     Stack,
     TextField,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { format, addDays, isBefore, parseISO } from 'date-fns';
@@ -27,7 +34,7 @@ const PropertyPage = () => {
     const { token, userId } = useAuth();
     const { id } = useParams();
     const { addBooking } = useProfile();
-    
+
     const [property, setProperty] = useState(properties.find((p) => p.id.toString() === id) || null);
     const [loading, setLoading] = useState(!property);
     const [bookedDates, setBookedDates] = useState([]);
@@ -67,12 +74,23 @@ const PropertyPage = () => {
 
     const findNextAvailableDates = (booked) => {
         let start = new Date();
-        while (booked.includes(format(start, 'yyyy-MM-dd'))) {
+        let consecutiveCount = 0;
+        let availableStart = null;
+
+        // Find the first 5 contiguous available days
+        while (consecutiveCount <= 5) {
+            if (!booked.includes(format(start, 'yyyy-MM-dd'))) {
+                if (consecutiveCount === 0) availableStart = start;  // Mark the start of the available dates
+                consecutiveCount++;
+            } else {
+                consecutiveCount = 0;  // Reset counter if a booked day is found
+            }
             start = addDays(start, 1);
         }
+
         setDefaultDates({
-            checkInDate: format(start, 'yyyy-MM-dd'),
-            checkOutDate: format(addDays(start, 5), 'yyyy-MM-dd'),
+            checkInDate: format(availableStart, 'yyyy-MM-dd'),
+            checkOutDate: format(addDays(availableStart.setHours(0, 0, 0), 5), 'yyyy-MM-dd'),
         });
     };
 
@@ -109,14 +127,14 @@ const PropertyPage = () => {
                     <Divider sx={{ marginTop: 3 }} />
 
                     {parseInt(userId, 10) === property.owner.id ? (
-                        <OwnerView property={property} token={token} setProperty={setProperty}/>
+                        <OwnerView property={property} token={token} setProperty={setProperty} />
                     ) : (
-                        <GuestBookingForm 
-                            property={property} 
-                            userId={userId} 
-                            token={token} 
-                            defaultDates={defaultDates} 
-                            shouldDisableDate={shouldDisableDate} 
+                        <GuestBookingForm
+                            property={property}
+                            userId={userId}
+                            token={token}
+                            defaultDates={defaultDates}
+                            shouldDisableDate={shouldDisableDate}
                             validationSchema={validationSchema}
                             addBooking={addBooking}
                         />
@@ -139,8 +157,31 @@ const PropertyPage = () => {
     );
 };
 
-// Component for guests booking a property
 const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisableDate, validationSchema, addBooking }) => {
+    const [numberOfNights, setNumberOfNights] = useState(0);
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [cleaningFee, setCleaningFee] = useState(0);
+    const [bookingFee, setBookingFee] = useState(0);
+    const [grandTotal, setGrandTotal] = useState(0);
+
+    const calculatePrices = (checkInDate, checkOutDate) => {
+        const checkIn = parseISO(checkInDate);
+        const checkOut = parseISO(checkOutDate);
+        const nights = Math.floor((checkOut - checkIn) / (1000 * 60 * 60 * 24)); // Calculate the number of nights
+
+        setNumberOfNights(nights);
+
+        const priceForStay = parseFloat(property.price_per_night) * nights;
+        const cleaning = priceForStay * 0.03;
+        const booking = priceForStay * 0.02;
+        const total = priceForStay + cleaning + booking;
+
+        setTotalPrice(priceForStay);
+        setCleaningFee(cleaning);
+        setBookingFee(booking);
+        setGrandTotal(total);
+    };
+
     const navigate = useNavigate();
     return (
         <Formik
@@ -149,31 +190,73 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
             validationSchema={validationSchema}
             onSubmit={async (values) => {
                 addBooking(property.id, values.checkInDate, values.checkOutDate);
+                console.log(values.checkInDate);
+                console.log(values.checkOutDate);
                 navigate('/profile');
             }}
         >
-            {({ values, setFieldValue }) => (
-                <Form>
-                    <Box sx={{ display: 'flex', gap: 2, marginTop: 2 }}>
-                        {['Check-In', 'Check-Out'].map((label, index) => (
-                            <FormControl fullWidth key={label}>
-                                <DatePicker
-                                    label={label}
-                                    value={parseISO(values[index === 0 ? 'checkInDate' : 'checkOutDate'])}
-                                    onChange={(newValue) =>
-                                        setFieldValue(index === 0 ? 'checkInDate' : 'checkOutDate', format(newValue, 'yyyy-MM-dd'))
-                                    }
-                                    shouldDisableDate={shouldDisableDate}
-                                />
-                            </FormControl>
-                        ))}
-                    </Box>
-                    <Button variant="contained" color="primary" sx={{ marginTop: 2 }} type="submit" disabled={!token}>Book Now</Button>
-                </Form>
-            )}
+            {({ values, setFieldValue }) => {
+                // Call calculatePrices when dates change
+                useEffect(() => {
+                    if (values.checkInDate && values.checkOutDate) {
+                        calculatePrices(values.checkInDate, values.checkOutDate);
+                    }
+                }, [values.checkInDate, values.checkOutDate]);
+
+                return (
+                    <Form>
+                        <Box sx={{ display: 'flex', gap: 2, marginTop: 2 }}>
+                            {['Check-In', 'Check-Out'].map((label, index) => (
+                                <FormControl fullWidth key={label}>
+                                    <DatePicker
+                                        label={label}
+                                        value={parseISO(values[index === 0 ? 'checkInDate' : 'checkOutDate'])}
+                                        onChange={(newValue) =>
+                                            setFieldValue(index === 0 ? 'checkInDate' : 'checkOutDate', format(newValue, 'yyyy-MM-dd'))
+                                        }
+                                        shouldDisableDate={shouldDisableDate}
+                                    />
+                                </FormControl>
+                            ))}
+                        </Box>
+
+                        {/* Display pricing details */}
+                        <TableContainer component={Paper} sx={{ marginTop: 3 }}>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Item</TableCell>
+                                        <TableCell align="right">Amount</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell>Total Price ({numberOfNights} night{numberOfNights > 1 ? 's' : ''})</TableCell>
+                                        <TableCell align="right">${totalPrice.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell>Cleaning Fee (3%)</TableCell>
+                                        <TableCell align="right">${cleaningFee.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell>Booking Fee (2%)</TableCell>
+                                        <TableCell align="right">${bookingFee.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell><strong>Total</strong></TableCell>
+                                        <TableCell align="right"><strong>${grandTotal.toFixed(2)}</strong></TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <Button variant="contained" color="primary" sx={{ marginTop: 2 }} type="submit" disabled={!token}>Book Now</Button>
+                    </Form>
+                );
+            }}
         </Formik>
     );
 };
+
 
 // Component for property owners managing bookings
 const OwnerView = ({ property, token, setProperty }) => {

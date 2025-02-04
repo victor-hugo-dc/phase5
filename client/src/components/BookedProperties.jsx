@@ -25,8 +25,7 @@ const BookedProperties = ({ userData }) => {
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>{property.title}</Typography>
                 <Typography variant="body2" color="text.secondary">{property.location_name}</Typography>
                 <Typography>
-                    {new Date(booking.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} -
-                    {new Date(booking.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {(new Date(...booking.start_date.split('-').map((val, i) => i === 1 ? parseInt(val, 10) - 1 : val))).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {(new Date(...booking.end_date.split('-').map((val, i) => i === 1 ? parseInt(val, 10) - 1 : val))).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </Typography>
             </CardContent>
         </Card>
