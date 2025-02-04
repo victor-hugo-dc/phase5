@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Box, TextField, Button, List, ListItem, ListItemText, Container } from '@mui/material';
+import { Box, TextField, Button, List, ListItem, ListItemText, Container, Typography } from '@mui/material';
 import { useFormik } from 'formik';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../contexts/ProfileContext';
 import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone'; // Import react-dropzone
 
 const HostHome = () => {
     const [suggestions, setSuggestions] = useState([]);
@@ -12,6 +13,7 @@ const HostHome = () => {
     const { token } = useAuth();
     const { addProperty } = useProfile();
     const navigate = useNavigate();
+    const [imagePreviews, setImagePreviews] = useState([]); // Track image previews
 
     const formik = useFormik({
         initialValues: {
@@ -57,9 +59,22 @@ const HostHome = () => {
         setSuggestions([]); // Only clear after selection
     };
 
-    const handleImageUpload = (event) => {
-        formik.setFieldValue('images', [...event.target.files]);
-    };
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop: (acceptedFiles) => {
+            // Limit to 10 images and update preview state
+            if (acceptedFiles.length + formik.values.images.length <= 10) {
+                formik.setFieldValue('images', [...formik.values.images, ...acceptedFiles]);
+                setImagePreviews([
+                    ...imagePreviews,
+                    ...acceptedFiles.map((file) => URL.createObjectURL(file))
+                ]);
+            } else {
+                alert("You can upload up to 10 images only.");
+            }
+        },
+        multiple: true,
+        accept: 'image/*',
+    });
 
     return (
         <Container>
@@ -101,7 +116,40 @@ const HostHome = () => {
                     )}
                 </Box>
 
-                <input type="file" multiple onChange={handleImageUpload} />
+                {/* Drag and Drop for Images */}
+                <Box
+                    {...getRootProps()}
+                    sx={{
+                        border: '2px dashed #7d8cd6',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        textAlign: 'center',
+                        backgroundColor: '#f4f5f7',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <input {...getInputProps()} />
+                    <Typography variant="body1" color="textSecondary">
+                        Drag & Drop Images Here, or Click to Select Files
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                        (Max 10 images)
+                    </Typography>
+                </Box>
+
+                {/* Preview Uploaded Images */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 2 }}>
+                    {imagePreviews.map((preview, index) => (
+                        <Box key={index} sx={{ width: '100px', height: '100px', position: 'relative' }}>
+                            <img
+                                src={preview}
+                                alt={`preview-${index}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                            />
+                        </Box>
+                    ))}
+                </Box>
+
                 <Button type="submit" variant="contained">Host Home</Button>
             </Box>
         </Container>
