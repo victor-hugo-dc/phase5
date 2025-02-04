@@ -27,7 +27,7 @@ import axios from 'axios';
 import { PropertiesContext } from '../contexts/PropertiesContext';
 
 const Navbar = () => {
-    const { token } = useAuth();
+    const { token, logout } = useAuth();
     const [anchorEl, setAnchorEl] = useState(null);
     const [location, setLocation] = useState('');
     const [placeId, setPlaceId] = useState('');
@@ -53,6 +53,7 @@ const Navbar = () => {
     };
 
     const handleLogout = () => {
+        logout();
         handleMenuClose();
         navigate('/auth/login');
     };
@@ -89,7 +90,7 @@ const Navbar = () => {
                 {/* Left Section */}
                 <Link to="/" style={{ textDecoration: 'none' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000' }}>
-                        Phase5
+                        malloc(Room)
                     </Typography>
                 </Link>
 

@@ -18,7 +18,7 @@ export const PropertiesProvider = ({ children }) => {
             setLoading(true);
             try {
                 const response = await axios.get(`http://localhost:5000/properties?page=${page}&limit=12`);
-                const newProperties = response.data;
+                const newProperties = response.data.sort(() => Math.random() - 0.5);
 
                 if (newProperties.length === 0) {
                     setHasMore(false); // No more properties to fetch

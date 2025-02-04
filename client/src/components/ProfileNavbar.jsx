@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom';
 
 
 const ProfileNavbar = () => {
-    const { token, userId } = useAuth(); // Use AuthContext to get token/userId
+    const { token, logout } = useAuth(); // Use AuthContext to get token/userId
     const [anchorEl, setAnchorEl] = useState(null); // State for managing menu
     const navigate = useNavigate();
 
@@ -30,6 +30,7 @@ const ProfileNavbar = () => {
 
     const handleLogout = () => {
         // Handle logout functionality (clear token, userId, etc.)
+        logout();
         handleMenuClose();
         navigate('/auth/login');
     };
@@ -40,7 +41,7 @@ const ProfileNavbar = () => {
                 {/* Left Section */}
                 <Link to="/" style={{ textDecoration: 'none' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000' }}>
-                        Phase5
+                        malloc(Room)
                     </Typography>
                 </Link>
 
