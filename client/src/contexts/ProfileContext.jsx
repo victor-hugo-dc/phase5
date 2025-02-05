@@ -77,6 +77,22 @@ export const ProfileProvider = ({ children }) => {
         }
     };
 
+    const deleteBooking = async (bookingId) => {
+        try {
+            await axios.delete(
+                `http://localhost:5000/bookings/${bookingId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+    
+            setUserData(prev => ({
+                ...prev,
+                booked_properties: prev.booked_properties.filter(bp => bp.id !== bookingId)
+            }));
+        } catch (err) {
+            console.error('Error deleting booking:', err);
+        }
+    };
+
     const addProperty = async (propertyData) => {
         try {
             const response = await axios.post(
@@ -131,7 +147,7 @@ export const ProfileProvider = ({ children }) => {
 
     return (
         <ProfileContext.Provider
-            value={{ userData, loading, error, setUserData, addBooking, editBooking, addProperty, editProperty, deleteProperty }}
+            value={{ userData, loading, error, setUserData, addBooking, editBooking, deleteBooking, addProperty, editProperty, deleteProperty }}
         >
             {children}
         </ProfileContext.Provider>

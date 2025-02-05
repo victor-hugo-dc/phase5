@@ -225,6 +225,26 @@ class BookingResource(Resource):
 
         return {"message": "Booking updated successfully."}, 200
 
+    @jwt_required()
+    def delete(self, booking_id):
+        user_id = get_jwt_identity()
+        booking = Booking.query.get(booking_id)
+
+        if not booking:
+            return {"error": "Booking not found."}, 404
+
+        if booking.user_id != user_id:
+            return {"error": "You can only delete your own bookings."}, 403
+
+        current_date = datetime.datetime.date.today()
+
+        if booking.start_date <= current_date:
+            return {"error": "You can only cancel a booking before its start date."}, 400
+
+        db.session.delete(booking)
+        db.session.commit()
+
+        return {"message": "Booking deleted successfully."}, 200
 
 class ReviewResource(Resource):
     @jwt_required()

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Card, CardMedia, CardContent, Typography } from '@mui/material';
 import { HorizontalScrollList } from './HorizontalScrollList';
+import { useNavigate } from 'react-router-dom';
 
 const BookedProperties = ({ userData }) => {
+    const navigate = useNavigate();
+
     const bookedItems = userData.booked_properties.length > 0
         ? userData.booked_properties.reverse().flatMap((property) =>
             property.bookings.map((booking, index) => ({
@@ -14,7 +17,7 @@ const BookedProperties = ({ userData }) => {
         : [];
 
     const renderBookedProperty = ({ property, booking, key }) => (
-        <Card key={key} sx={{ height: 350, minWidth: 300, objectFit: 'cover' }}>
+        <Card key={key} sx={{ height: 350, minWidth: 300, objectFit: 'cover', cursor: 'pointer' }} onClick={() => navigate(`/booking/${booking.id}`)}>
             <CardMedia
                 component="img"
                 image={`http://localhost:5000/images/${property.images[0].image_path}`}
