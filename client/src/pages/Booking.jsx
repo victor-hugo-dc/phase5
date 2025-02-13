@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Formik, Form } from "formik";
 import { DatePicker } from "@mui/x-date-pickers";
-import { format, isBefore, isAfter, parseISO } from "date-fns";
+import { format, isBefore, isAfter, parseISO, isWithinInterval, startOfDay } from "date-fns";
 import * as Yup from "yup";
 import ImageGrid from "../components/ImageGrid";
 import { useProfile } from "../contexts/ProfileContext";
@@ -23,7 +23,8 @@ const BookingPage = () => {
     const { userData, deleteBooking, editBooking } = useProfile();
     const [booking, setBooking] = useState(null);
     const [property, setProperty] = useState(null);
-    const today = new Date();
+    const [bookedDates, setBookedDates] = useState([]);
+    const today = startOfDay(new Date());
 
     useEffect(() => {
         if (userData?.booked_properties) {
@@ -37,6 +38,26 @@ const BookingPage = () => {
             }
         }
     }, [userData, id]);
+
+    useEffect(() => {
+        if (property && property.bookings.length) {
+            setBookedDates(
+                property.bookings
+                    .filter(booking => booking.id !== parseInt(id, 10))
+                    .map(({ start_date, end_date }) => ({
+                        start: parseISO(start_date),
+                        end: parseISO(end_date),
+                    }))
+            );
+        }
+    }, [property]);
+
+    const isDateDisabled = (date) => {
+        return isBefore(date, today) || 
+            bookedDates.some(({ start, end }) =>
+                isWithinInterval(date, { start, end })
+            );
+    };
 
     if (!booking) return <Typography>Loading booking details...</Typography>;
 
@@ -95,6 +116,7 @@ const BookingPage = () => {
                                                 setFieldTouched("startDate", true);  // Ensure field is touched for validation
                                             }}
                                             disabled={isOngoing || isPastEndDate}
+                                            shouldDisableDate={isDateDisabled}
                                             renderInput={(params) => (
                                                 <TextField {...params} error={touched.startDate && Boolean(errors.startDate)} helperText={touched.startDate && errors.startDate} />
                                             )}
@@ -109,6 +131,7 @@ const BookingPage = () => {
                                                 setFieldTouched("endDate", true);  // Ensure field is touched for validation
                                             }}
                                             disabled={isPastEndDate}
+                                            shouldDisableDate={isDateDisabled}
                                             renderInput={(params) => (
                                                 <TextField {...params} error={touched.endDate && Boolean(errors.endDate)} helperText={touched.endDate && errors.endDate} />
                                             )}
