@@ -19,7 +19,7 @@ export const ProfileProvider = ({ children }) => {
             setLoading(false);
             return;
         }
-    
+
         setLoading(true);
         axios.get(`http://localhost:5000/users/${userId}`)
             .then(response => {
@@ -31,7 +31,7 @@ export const ProfileProvider = ({ children }) => {
             .finally(() => {
                 setLoading(false);
             });
-    
+
     }, [token, userId]);
 
     const addBooking = async (propertyId, startDate, endDate) => {
@@ -47,7 +47,7 @@ export const ProfileProvider = ({ children }) => {
                 ...prev,
                 booked_properties: [...prev.booked_properties, response.data.property]
             }));
-            setProperties(prev => 
+            setProperties(prev =>
                 prev.map(property =>
                     property.id === propertyId
                         ? { ...property, bookings: [...(property.bookings || []), response.data.booking] }
@@ -66,12 +66,11 @@ export const ProfileProvider = ({ children }) => {
                 { start_date: startDate, end_date: endDate },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            setUserData(prev => ({
-                ...prev,
-                booked_properties: prev.booked_properties.map(bp =>
-                    bp.id === bookingId ? { ...bp, start_date: startDate, end_date: endDate } : bp
-                )
-            }));
+            // TODO: Replace this bandaid.
+            axios.get(`http://localhost:5000/users/${userId}`)
+                .then(response => {
+                    setUserData(response.data);
+                });
         } catch (err) {
             console.error('Error editing booking:', err);
         }
@@ -83,7 +82,7 @@ export const ProfileProvider = ({ children }) => {
                 `http://localhost:5000/bookings/${bookingId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-    
+
             setUserData(prev => ({
                 ...prev,
                 booked_properties: prev.booked_properties.filter(bp => bp.id !== bookingId)
@@ -98,7 +97,7 @@ export const ProfileProvider = ({ children }) => {
             const response = await axios.post(
                 `http://localhost:5000/properties`,
                 propertyData,
-                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data'  } }
+                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
             );
             setUserData(prev => ({
                 ...prev,
