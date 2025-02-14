@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Grid, Box, Modal, IconButton } from '@mui/material';
+import { Grid, Box, Modal, IconButton, Container } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 const ImageGrid = ({ images }) => {
@@ -100,48 +100,50 @@ const ImageGrid = ({ images }) => {
             {getImageGrid()}
 
             <Modal open={open} onClose={handleClose}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100vh',
-                        bgcolor: 'white',
-                        position: 'relative',
-                        padding: 2,
-                        overflowY: 'auto',
-                    }}
-                >
-                    <IconButton
-                        onClick={handleClose}
+                <Container>
+                    <Box
                         sx={{
-                            position: 'absolute',
-                            top: 20,
-                            right: 20,
-                            color: 'black',
-                            zIndex: 2,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: '100vh',
+                            bgcolor: 'white',
+                            position: 'relative',
+                            padding: 2,
+                            overflowY: 'auto',
                         }}
                     >
-                        <CloseIcon />
-                    </IconButton>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        {images.map((image, index) => (
-                            <img
-                                key={index}
-                                src={`http://localhost:5000/images/${image.image_path}`}
-                                alt={`Property ${index + 1}`}
-                                style={{
-                                    maxWidth: 500,
-                                    maxHeight: '90vh',
-                                    objectFit: 'contain',
-                                    margin: 10,
-                                    cursor: 'pointer',
-                                }}
-                            />
-                        ))}
+                        <IconButton
+                            onClick={handleClose}
+                            sx={{
+                                position: 'absolute',
+                                top: 20,
+                                right: 20,
+                                color: 'black',
+                                zIndex: 2,
+                            }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
+                            {images.map((image, index) => (
+                                <img
+                                    key={index}
+                                    src={`http://localhost:5000/images/${image.image_path}`}
+                                    alt={`Property ${index + 1}`}
+                                    style={{
+                                        maxWidth: 500,
+                                        maxHeight: '90vh',
+                                        objectFit: 'contain',
+                                        margin: 10,
+                                        cursor: 'pointer',
+                                    }}
+                                />
+                            ))}
+                        </Box>
                     </Box>
-                </Box>
+                </Container>
             </Modal>
         </>
     );
