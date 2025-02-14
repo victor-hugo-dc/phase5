@@ -187,14 +187,15 @@ const ReviewForm = ({ token, property, addReview }) => {
 
 const BookingPage = () => {
     const { id } = useParams();
-    const { token } = useAuth();
+    const { token, userId } = useAuth();
     const { userData, deleteBooking, editBooking } = useProfile();
     const [booking, setBooking] = useState(null);
     const [property, setProperty] = useState(null);
     const [bookedDates, setBookedDates] = useState([]);
     const today = startOfDay(new Date());
     const navigate = useNavigate();
-    const { addReview } = useProperties();
+    const { properties, addReview } = useProperties();
+    const [hasReviewed, setHasReviewed] = useState(false);
 
     useEffect(() => {
         if (userData?.booked_properties) {
@@ -203,6 +204,7 @@ const BookingPage = () => {
                 if (foundBooking) {
                     setProperty(prop);
                     setBooking(foundBooking);
+                    setHasReviewed(prop.reviews?.some(review => review.user_id === parseInt(userId, 10)))
                     break;
                 }
             }
@@ -221,6 +223,13 @@ const BookingPage = () => {
             );
         }
     }, [property]);
+
+    useEffect(() => {
+        const found = properties.find((prop) => property && prop.id === property.id);
+        if (found) {
+            setHasReviewed(found.reviews?.some(review => review.user_id === parseInt(userId, 10)))
+        }
+    }, [properties])
 
     if (!booking) return <Typography>Loading booking details...</Typography>;
 
@@ -245,7 +254,7 @@ const BookingPage = () => {
                     <Typography variant="h6" sx={{ marginTop: 2 }}>Edit Booking Dates</Typography>
                     <BookingDatesForm booking={booking} bookedDates={bookedDates} handleUpdateBookingDates={handleUpdateBookingDates} />
 
-                    {isAfter(today, endDate) && (
+                    {isAfter(today, endDate) && !hasReviewed && (
                         <ReviewForm token={token} property={property} addReview={addReview} />
                     )}
 
