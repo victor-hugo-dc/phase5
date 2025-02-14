@@ -1,7 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
-// Create the Context
 export const PropertiesContext = createContext();
 export const useProperties = () => useContext(PropertiesContext);
 
@@ -12,12 +11,12 @@ export const PropertiesProvider = ({ children }) => {
     const [hasMore, setHasMore] = useState(true);
 
     useEffect(() => {
-        const fetchProperties = async () => {
-            if (loading || !hasMore) return;
+        if (loading || !hasMore) return;
 
-            setLoading(true);
-            try {
-                const response = await axios.get(`http://localhost:5000/properties?page=${page}&limit=12`);
+        setLoading(true);
+
+        axios.get(`http://localhost:5000/properties?page=${page}&limit=12`)
+            .then(response => {
                 const newProperties = response.data.sort(() => Math.random() - 0.5);
 
                 if (newProperties.length === 0) {
@@ -30,14 +29,13 @@ export const PropertiesProvider = ({ children }) => {
                         return [...prevProperties, ...filteredNewProperties];
                     });
                 }
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error('Error fetching properties:', error);
-            } finally {
+            })
+            .finally(() => {
                 setLoading(false);
-            }
-        };
-
-        fetchProperties();
+            });
     }, [page]);
 
     const loadMore = () => {
