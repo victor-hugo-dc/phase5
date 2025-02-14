@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/axios';
 import { Box, Typography, Container, Divider } from '@mui/material';
 import { ReviewCard } from '../components/ReviewCard'; 
 import { HorizontalScrollList } from '../components/HorizontalScrollList';
@@ -13,7 +13,7 @@ const HostPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get(`http://localhost:5000/users/${id}`)
+        api.get(`/users/${id}`)
             .then((response) => {
                 setUserData(response.data);
             })

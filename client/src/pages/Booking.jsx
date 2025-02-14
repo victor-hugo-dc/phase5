@@ -18,7 +18,7 @@ import * as Yup from "yup";
 import ImageGrid from "../components/ImageGrid";
 import { useProfile } from "../contexts/ProfileContext";
 import { useAuth } from "../contexts/AuthContext";
-import axios from "axios";
+import api from "../utils/axios";
 import { useProperties } from "../contexts/PropertiesContext";
 
 const PropertyDescription = ({ property }) => (
@@ -124,8 +124,8 @@ const ReviewForm = ({ token, property, addReview }) => {
                 })}
                 onSubmit={async (values, { setSubmitting, resetForm }) => {
                     try {
-                        const { data } = await axios.post(
-                            "http://localhost:5000/reviews",
+                        const { data } = await api.post(
+                            "/reviews",
                             {
                                 property_id: property.id,
                                 rating: values.rating,

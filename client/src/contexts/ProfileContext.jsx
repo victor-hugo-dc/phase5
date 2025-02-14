@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { useProperties } from './PropertiesContext';
+import api from '../utils/axios';
 
 const ProfileContext = createContext();
 export const useProfile = () => useContext(ProfileContext);
@@ -21,7 +21,7 @@ export const ProfileProvider = ({ children }) => {
         }
 
         setLoading(true);
-        axios.get(`http://localhost:5000/users/${userId}`)
+        api.get(`/users/${userId}`)
             .then(response => {
                 setUserData(response.data);
             })
@@ -36,8 +36,8 @@ export const ProfileProvider = ({ children }) => {
 
     const addBooking = async (propertyId, startDate, endDate) => {
         try {
-            const response = await axios.post(
-                `http://localhost:5000/bookings`,
+            const response = await api.post(
+                `/bookings`,
                 { user_id: userId, property_id: propertyId, start_date: startDate, end_date: endDate },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -61,13 +61,13 @@ export const ProfileProvider = ({ children }) => {
 
     const editBooking = async (bookingId, startDate, endDate) => {
         try {
-            await axios.put(
-                `http://localhost:5000/bookings/${bookingId}`,
+            await api.put(
+                `/bookings/${bookingId}`,
                 { start_date: startDate, end_date: endDate },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             // TODO: Replace this bandaid.
-            axios.get(`http://localhost:5000/users/${userId}`)
+            api.get(`/users/${userId}`)
                 .then(response => {
                     setUserData(response.data);
                 });
@@ -78,15 +78,24 @@ export const ProfileProvider = ({ children }) => {
 
     const deleteBooking = async (bookingId) => {
         try {
-            await axios.delete(
-                `http://localhost:5000/bookings/${bookingId}`,
+            await api.delete(
+                `/bookings/${bookingId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            axios.get(`http://localhost:5000/users/${userId}`)
+            api.get(`/users/${userId}`)
                 .then(response => {
                     setUserData(response.data);
                 });
+
+            setProperties(prev =>
+                prev.map(property => ({
+                    ...property,
+                    bookings: property.bookings
+                        ? property.bookings.filter(booking => booking.id !== bookingId)
+                        : []
+                }))
+            );
         } catch (err) {
             console.error('Error deleting booking:', err);
         }
@@ -94,8 +103,8 @@ export const ProfileProvider = ({ children }) => {
 
     const addProperty = async (propertyData) => {
         try {
-            const response = await axios.post(
-                `http://localhost:5000/properties`,
+            const response = await api.post(
+                `/properties`,
                 propertyData,
                 { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
             );
@@ -113,8 +122,8 @@ export const ProfileProvider = ({ children }) => {
 
     const editProperty = async (propertyId, updatedData) => {
         try {
-            const response = await axios.put(
-                `http://localhost:5000/properties/${propertyId}`,
+            const response = await api.put(
+                `/properties/${propertyId}`,
                 updatedData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -132,8 +141,8 @@ export const ProfileProvider = ({ children }) => {
 
     const deleteProperty = async (propertyId) => {
         try {
-            await axios.delete(
-                `http://localhost:5000/properties/${propertyId}`,
+            await api.delete(
+                `/properties/${propertyId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setUserData(prev => ({

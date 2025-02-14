@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Formik, Field, Form, ErrorMessage } from 'formik';
+import api from '../utils/axios';
+import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
 import { TextField, Button, Box, Typography, Link, Alert, Container } from '@mui/material';
 
@@ -44,7 +44,7 @@ const Signup = () => {
     const handleSignup = async (values) => {
         try {
             const { name, email, password } = values;
-            await axios.post('http://localhost:5000/signup', { name, email, password });
+            await api.post('/signup', { name, email, password });
 
             const isLoginSuccessful = await login(email, password);
 

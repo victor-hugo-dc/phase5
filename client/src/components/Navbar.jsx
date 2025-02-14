@@ -6,7 +6,6 @@ import {
     Box,
     TextField,
     IconButton,
-    Avatar,
     Menu,
     MenuItem,
     FormControl,
@@ -23,7 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { format, isBefore, parseISO } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers';
-import axios from 'axios';
+import api from '../utils/axios';
 import { PropertiesContext } from '../contexts/PropertiesContext';
 
 const Navbar = () => {
@@ -68,7 +67,7 @@ const Navbar = () => {
 
         if (value) {
             try {
-                const response = await axios.post('http://localhost:5000/autocomplete', { location: value });
+                const response = await api.post('/autocomplete', { location: value });
                 setSuggestions(response.data.suggestions || []);
             } catch (error) {
                 console.error("Error fetching autocomplete data", error);
@@ -120,7 +119,7 @@ const Navbar = () => {
                                     end_date: values.endDate,
                                 };
             
-                                const response = await axios.post('http://localhost:5000/search', requestData);
+                                const response = await api.post('/search', requestData);
             
                                 console.log('Available Properties:', response.data.available_properties);
                                 setProperties(response.data.available_properties);

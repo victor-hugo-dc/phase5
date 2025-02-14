@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import api from '../utils/axios';
 
 export const PropertiesContext = createContext();
 export const useProperties = () => useContext(PropertiesContext);
@@ -15,7 +15,7 @@ export const PropertiesProvider = ({ children }) => {
 
         setLoading(true);
 
-        axios.get(`http://localhost:5000/properties?page=${page}&limit=12`)
+        api.get(`/properties?page=${page}&limit=12`)
             .then(response => {
                 const newProperties = response.data.sort(() => Math.random() - 0.5);
 

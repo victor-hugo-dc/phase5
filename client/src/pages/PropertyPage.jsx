@@ -24,7 +24,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { format, addDays, isBefore, parseISO } from 'date-fns';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
-import axios from 'axios';
+import api from '../utils/axios';
 import ImageGrid from '../components/ImageGrid';
 import StarRating from '../components/StarRating';
 import { useProfile } from '../contexts/ProfileContext';
@@ -43,10 +43,9 @@ const PropertyPage = () => {
     // Fetch property if not found in context
     useEffect(() => {
         if (!property) {
-            axios.get(`http://localhost:5000/properties/${id}`)
+            api.get(`/properties/${id}`)
                 .then((res) => {
                     setProperty(res.data);
-                    console.log(res.data.owner.id);
                     setLoading(false);
                 })
                 .catch(() => {

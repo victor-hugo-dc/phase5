@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/axios';
 import { Box, TextField, Button, List, ListItem, ListItemText, Container, Typography } from '@mui/material';
 import { useFormik } from 'formik';
 import { useProfile } from '../contexts/ProfileContext';
@@ -41,7 +41,7 @@ const HostHome = () => {
 
         if (value) {
             try {
-                const response = await axios.post('http://localhost:5000/autocomplete', { location: value });
+                const response = await api.post('/autocomplete', { location: value });
                 setSuggestions(response.data.suggestions || []);
             } catch (error) {
                 console.error("Error fetching autocomplete data", error);
