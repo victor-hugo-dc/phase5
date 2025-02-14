@@ -3,10 +3,11 @@ import { useRoutes } from "react-router-dom";
 import MainLayout from "../layout/main";
 import AuthLayout from "../layout/auth";
 import ProfileLayout from "../layout/profile";
+import Fallback from "../pages/Fallback";
 
 const Loadable = (Component) => (props) => {
     return (
-        <Suspense fallback={<></>}>
+        <Suspense fallback={<Fallback />}>
             <Component {...props} />
         </Suspense>
     );
