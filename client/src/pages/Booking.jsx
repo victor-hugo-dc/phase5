@@ -17,9 +17,11 @@ import { format, isBefore, isAfter, parseISO, isWithinInterval, startOfDay } fro
 import * as Yup from "yup";
 import ImageGrid from "../components/ImageGrid";
 import { useProfile } from "../contexts/ProfileContext";
+import { useAuth } from "../contexts/AuthContext";
 
 const BookingPage = () => {
     const { id } = useParams();
+    const { token } = useAuth();
     const { userData, deleteBooking, editBooking } = useProfile();
     const [booking, setBooking] = useState(null);
     const [property, setProperty] = useState(null);
@@ -54,7 +56,7 @@ const BookingPage = () => {
     }, [property]);
 
     const isDateDisabled = (date) => {
-        return isBefore(date, today) || 
+        return isBefore(date, today) ||
             bookedDates.some(({ start, end }) =>
                 isWithinInterval(date, { start, end })
             );
@@ -146,16 +148,96 @@ const BookingPage = () => {
                         )}
                     </Formik>
 
+                    {isAfter(today, endDate) && (
+                        <>
+                            <Divider sx={{ marginTop: 3 }} />
+                            <Typography variant="h6" sx={{ marginTop: 2 }}>Leave a Review</Typography>
+                            <Formik
+                                initialValues={{
+                                    rating: "",
+                                    comment: "",
+                                }}
+                                validationSchema={Yup.object({
+                                    rating: Yup.number()
+                                        .required("Required")
+                                        .min(1, "Minimum rating is 1")
+                                        .max(5, "Maximum rating is 5"),
+                                    comment: Yup.string().required("Required"),
+                                })}
+                                onSubmit={async (values, { setSubmitting, resetForm }) => {
+                                    try {
+                                        const response = await fetch("http://localhost:5000/reviews", {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type": "application/json",
+                                                Authorization: `Bearer ${token}`, // Ensure JWT is included
+                                            },
+                                            body: JSON.stringify({
+                                                property_id: property.id,
+                                                rating: values.rating,
+                                                comment: values.comment,
+                                            }),
+                                        });
+
+                                        const data = await response.json();
+                                        if (!response.ok) throw new Error(data.error || "Failed to submit review");
+
+                                        alert("Review submitted successfully!");
+                                        resetForm();
+                                    } catch (error) {
+                                        console.error("Error submitting review:", error);
+                                        alert(error.message);
+                                    }
+                                    setSubmitting(false);
+                                }}
+                            >
+                                {({ values, handleChange, handleBlur, errors, touched, isSubmitting }) => (
+                                    <Form>
+                                        <Stack spacing={2} sx={{ marginTop: 2 }}>
+                                            <TextField
+                                                label="Rating (1-5)"
+                                                name="rating"
+                                                type="number"
+                                                value={values.rating}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                error={touched.rating && Boolean(errors.rating)}
+                                                helperText={touched.rating && errors.rating}
+                                                inputProps={{ min: 1, max: 5 }}
+                                                fullWidth
+                                            />
+                                            <TextField
+                                                label="Comment"
+                                                name="comment"
+                                                multiline
+                                                rows={3}
+                                                value={values.comment}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                error={touched.comment && Boolean(errors.comment)}
+                                                helperText={touched.comment && errors.comment}
+                                                fullWidth
+                                            />
+                                            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+                                                Submit Review
+                                            </Button>
+                                        </Stack>
+                                    </Form>
+                                )}
+                            </Formik>
+                        </>
+                    )}
+
                     <Divider sx={{ marginTop: 3 }} />
                     <Typography variant="h6" sx={{ marginTop: 2 }}>Cancel Booking</Typography>
-                    <Button 
-                        variant="outlined" 
-                        color="error" 
+                    <Button
+                        variant="outlined"
+                        color="error"
                         onClick={() => {
                             deleteBooking(id);
                             navigate('/profile');
-                        }} 
-                        sx={{ marginTop: 2 }} 
+                        }}
+                        sx={{ marginTop: 2 }}
                         disabled={isPastStartDate}
                     >
                         Delete Booking
