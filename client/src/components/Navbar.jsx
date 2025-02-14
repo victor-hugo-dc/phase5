@@ -218,10 +218,6 @@ const Navbar = () => {
                     <IconButton onClick={handleMenuClick}>
                         <MenuIcon />
                     </IconButton>
-                    <Avatar
-                        alt="Profile"
-                        src={token ? '/profile.jpg' : '/grey-circle.jpg'} // Display grey circle if not logged in
-                    />
                     <Menu
                         anchorEl={anchorEl}
                         open={Boolean(anchorEl)}
@@ -229,7 +225,6 @@ const Navbar = () => {
                     >
                         {token ? (
                             <>
-                                <MenuItem onClick={() => navigate('/')}>Trips</MenuItem>
                                 <MenuItem onClick={() => navigate('/host-home')}>Host Your Home</MenuItem>
                                 <MenuItem onClick={() => navigate('/profile')}>Account</MenuItem>
                                 <MenuItem onClick={handleLogout}>Log Out</MenuItem>

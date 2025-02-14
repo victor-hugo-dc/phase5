@@ -42,7 +42,6 @@ export const ProfileProvider = ({ children }) => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             // check if there is already a booking in that property
-            console.log(response.data.property);
             setUserData(prev => ({
                 ...prev,
                 booked_properties: [...prev.booked_properties, response.data.property]
@@ -54,6 +53,7 @@ export const ProfileProvider = ({ children }) => {
                         : property
                 )
             );
+            return response.data.booking;
         } catch (err) {
             console.error('Error adding booking:', err);
         }

@@ -189,10 +189,8 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
             initialValues={defaultDates}
             validationSchema={validationSchema}
             onSubmit={async (values) => {
-                addBooking(property.id, values.checkInDate, values.checkOutDate);
-                console.log(values.checkInDate);
-                console.log(values.checkOutDate);
-                navigate('/profile');
+                const booking = await addBooking(property.id, values.checkInDate, values.checkOutDate);
+                navigate(`/booking/${booking.id}`);
             }}
         >
             {({ values, setFieldValue }) => {
