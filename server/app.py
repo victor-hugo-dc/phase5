@@ -256,7 +256,7 @@ class ReviewResource(Resource):
         db.session.add(new_review)
         db.session.commit()
 
-        return {"message": "Review added successfully"}, 201
+        return {"review": new_review.to_dict()}, 201
 
 
 class Autocomplete(Resource):

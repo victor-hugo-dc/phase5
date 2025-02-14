@@ -44,8 +44,18 @@ export const PropertiesProvider = ({ children }) => {
         }
     };
 
+    const addReview = (propertyId, review) => {
+        setProperties((prevProperties) => 
+            prevProperties.map((property) => 
+                property.id === propertyId 
+                    ? { ...property, reviews: [...property.reviews, review] } 
+                    : property
+            )
+        );
+    }
+
     return (
-        <PropertiesContext.Provider value={{ properties, loadMore, setProperties }}>
+        <PropertiesContext.Provider value={{ properties, loadMore, setProperties, addReview }}>
             {children}
         </PropertiesContext.Provider>
     );

@@ -19,6 +19,7 @@ import ImageGrid from "../components/ImageGrid";
 import { useProfile } from "../contexts/ProfileContext";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
+import { useProperties } from "../contexts/PropertiesContext";
 
 const PropertyDescription = ({ property }) => (
     <Stack direction="row">
@@ -104,7 +105,7 @@ const BookingDatesForm = ({ booking, bookedDates, handleUpdateBookingDates }) =>
     );
 }
 
-const ReviewForm = ({ token, property }) => {
+const ReviewForm = ({ token, property, addReview }) => {
     return (
         <>
             <Divider sx={{ marginTop: 3 }} />
@@ -136,7 +137,7 @@ const ReviewForm = ({ token, property }) => {
                                 },
                             }
                         );
-                    
+                        addReview(property.id, data.review);
                         alert("Review submitted successfully!");
                         resetForm()
                     } catch (error) {
@@ -193,6 +194,7 @@ const BookingPage = () => {
     const [bookedDates, setBookedDates] = useState([]);
     const today = startOfDay(new Date());
     const navigate = useNavigate();
+    const { addReview } = useProperties();
 
     useEffect(() => {
         if (userData?.booked_properties) {
@@ -244,7 +246,7 @@ const BookingPage = () => {
                     <BookingDatesForm booking={booking} bookedDates={bookedDates} handleUpdateBookingDates={handleUpdateBookingDates} />
 
                     {isAfter(today, endDate) && (
-                        <ReviewForm token={token} property={property} />
+                        <ReviewForm token={token} property={property} addReview={addReview} />
                     )}
 
                     <Divider sx={{ marginTop: 3 }} />

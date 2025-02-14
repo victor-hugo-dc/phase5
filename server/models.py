@@ -123,6 +123,16 @@ class Review(db.Model):
     comment = db.Column(db.Text, nullable=False)
     user = db.relationship('User', back_populates='reviews')
     property = db.relationship('Property', back_populates='reviews')
+    
+    def to_dict(self):
+        review_data = {
+            "id": self.id,
+            "user_id": self.user_id,
+            "property_id": self.property_id,
+            "rating": self.rating,
+            "comment": self.comment,
+        }
+        return review_data
 
 
 class ReviewSchema(ma.SQLAlchemyAutoSchema):
