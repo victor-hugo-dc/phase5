@@ -33,7 +33,7 @@ const PropertyPage = () => {
     const { properties } = useContext(PropertiesContext);
     const { token, userId } = useAuth();
     const { id } = useParams();
-    const { addBooking } = useProfile();
+    const { addBooking, editProperty } = useProfile();
 
     const [property, setProperty] = useState(properties.find((p) => p.id.toString() === id) || null);
     const [loading, setLoading] = useState(!property);
@@ -127,7 +127,7 @@ const PropertyPage = () => {
                     <Divider sx={{ marginTop: 3 }} />
 
                     {parseInt(userId, 10) === property.owner.id ? (
-                        <OwnerView property={property} token={token} setProperty={setProperty} />
+                        <OwnerView property={property} editProperty={editProperty} setProperty={setProperty} />
                     ) : (
                         <GuestBookingForm
                             property={property}
@@ -257,7 +257,7 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
 
 
 // Component for property owners managing bookings
-const OwnerView = ({ property, token, setProperty }) => {
+const OwnerView = ({ property, editProperty, setProperty }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         title: property.title,
@@ -273,12 +273,8 @@ const OwnerView = ({ property, token, setProperty }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.put(
-                `http://localhost:5000/properties/${property.id}`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setProperty(response.data);
+            const prop = await editProperty(property.id, formData);
+            setProperty(prop);
             setIsEditing(false);
             alert('Property updated successfully');
         } catch {
@@ -306,6 +302,7 @@ const OwnerView = ({ property, token, setProperty }) => {
                         value={formData.location_name}
                         onChange={handleInputChange}
                         sx={{ marginBottom: 2 }}
+                        disabled={true}
                     />
                     <TextField
                         fullWidth

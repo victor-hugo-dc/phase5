@@ -113,7 +113,7 @@ export const ProfileProvider = ({ children }) => {
 
     const editProperty = async (propertyId, updatedData) => {
         try {
-            await axios.put(
+            const response = await axios.put(
                 `http://localhost:5000/properties/${propertyId}`,
                 updatedData,
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -124,6 +124,7 @@ export const ProfileProvider = ({ children }) => {
                     op.id === propertyId ? { ...op, ...updatedData } : op
                 )
             }));
+            return response.data;
         } catch (err) {
             console.error('Error editing property:', err);
         }
