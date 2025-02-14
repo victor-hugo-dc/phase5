@@ -184,12 +184,17 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         ]
 
     def get_booked_properties(self, user):
-        return [
-            {
-                **PropertySchema().dump(booking.property),
-                "bookings": BookingSchema(many=True).dump(
-                    [b for b in booking.property.bookings if b.user_id == user.id]
-                ),
-            }
-            for booking in user.bookings
-        ]
+        booked_properties = {}
+
+        for booking in user.bookings:
+            property_id = booking.property.id
+
+            if property_id not in booked_properties:
+                booked_properties[property_id] = {
+                    **PropertySchema().dump(booking.property),
+                    "bookings": [],
+                }
+
+            booked_properties[property_id]["bookings"].append(BookingSchema().dump(booking))
+
+        return list(booked_properties.values())

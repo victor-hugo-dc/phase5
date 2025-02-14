@@ -64,8 +64,12 @@ class UserResource(Resource):
     def get(self, user_id=None):
         if user_id:
             user = User.query.get(user_id)
-            return user_schema.dump(user)
-        return users_schema.dump(User.query.all())
+            if not user:
+                return {"error": "User not found."}, 404
+            return user_schema.dump(user), 200
+        
+        users = User.query.all()
+        return users_schema.dump(users), 200
 
     @jwt_required()
     def put(self, user_id):
