@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Box, TextField, Button, List, ListItem, ListItemText, Container, Typography } from '@mui/material';
 import { useFormik } from 'formik';
-import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../contexts/ProfileContext';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone'; // Import react-dropzone
@@ -10,7 +9,6 @@ import { useDropzone } from 'react-dropzone'; // Import react-dropzone
 const HostHome = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [placeId, setPlaceId] = useState('');
-    const { token } = useAuth();
     const { addProperty } = useProfile();
     const navigate = useNavigate();
     const [imagePreviews, setImagePreviews] = useState([]); // Track image previews
@@ -120,7 +118,7 @@ const HostHome = () => {
                 <Box
                     {...getRootProps()}
                     sx={{
-                        border: '2px dashed #7d8cd6',
+                        border: '2px dashed #cce08b',
                         borderRadius: '8px',
                         padding: '20px',
                         textAlign: 'center',
@@ -150,7 +148,7 @@ const HostHome = () => {
                     ))}
                 </Box>
 
-                <Button type="submit" variant="contained">Host Home</Button>
+                <Button type="submit" variant="contained" sx={{ bgcolor: '#cce08b' }}>Host Home</Button>
             </Box>
         </Container>
     );

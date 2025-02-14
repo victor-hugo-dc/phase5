@@ -33,7 +33,7 @@ const PropertyPage = () => {
     const { properties } = useContext(PropertiesContext);
     const { token, userId } = useAuth();
     const { id } = useParams();
-    const { addBooking, editProperty } = useProfile();
+    const { addBooking, editProperty, deleteProperty } = useProfile();
 
     const [property, setProperty] = useState(properties.find((p) => p.id.toString() === id) || null);
     const [loading, setLoading] = useState(!property);
@@ -127,7 +127,7 @@ const PropertyPage = () => {
                     <Divider sx={{ marginTop: 3 }} />
 
                     {parseInt(userId, 10) === property.owner.id ? (
-                        <OwnerView property={property} editProperty={editProperty} setProperty={setProperty} />
+                        <OwnerView property={property} editProperty={editProperty} setProperty={setProperty} deleteProperty={deleteProperty}/>
                     ) : (
                         <GuestBookingForm
                             property={property}
@@ -257,7 +257,8 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
 
 
 // Component for property owners managing bookings
-const OwnerView = ({ property, editProperty, setProperty }) => {
+const OwnerView = ({ property, editProperty, setProperty, deleteProperty }) => {
+    const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         title: property.title,
@@ -276,9 +277,19 @@ const OwnerView = ({ property, editProperty, setProperty }) => {
             const prop = await editProperty(property.id, formData);
             setProperty(prop);
             setIsEditing(false);
-            alert('Property updated successfully');
+            alert("Property updated successfully");
         } catch {
-            alert('Error updating property');
+            alert("Error updating property");
+        }
+    };
+
+    const handleDelete = async () => {
+        try {
+            await deleteProperty(property.id);
+            alert("Property deleted successfully");
+            navigate("/"); // Redirect after deletion
+        } catch {
+            alert("Error deleting property");
         }
     };
 
@@ -314,17 +325,25 @@ const OwnerView = ({ property, editProperty, setProperty }) => {
                         rows={4}
                         sx={{ marginBottom: 2 }}
                     />
-                    <Button type="submit" variant="contained" color="primary">Save Changes</Button>
-                    <Button onClick={() => setIsEditing(false)} variant="outlined" sx={{ marginLeft: 2 }}>Cancel</Button>
+                    <Button type="submit" variant="contained" color="primary">
+                        Save Changes
+                    </Button>
+                    <Button onClick={() => setIsEditing(false)} variant="outlined" sx={{ marginLeft: 2 }}>
+                        Cancel
+                    </Button>
                 </form>
             ) : (
                 <Button variant="contained" color="warning" onClick={() => setIsEditing(true)}>
                     Edit Property Listing
                 </Button>
             )}
+            <Box sx={{ marginTop: 2 }}>
+                <Button variant="contained" color="error" onClick={handleDelete}>
+                    Delete Property
+                </Button>
+            </Box>
         </Box>
     );
 };
-
 
 export default PropertyPage;

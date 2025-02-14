@@ -174,6 +174,24 @@ class PropertyResource(Resource):
         
         return property_schema.dump(property_), 200
 
+    @jwt_required()
+    def delete(self, property_id):
+        user_id = get_jwt_identity()
+        property_ = Property.query.get(property_id)
+
+        if not property_:
+            return {"error": "Property not found"}, 404
+        
+        if property_.owner_id != user_id:
+            return {"error": "Unauthorized to delete this property"}, 403
+        
+        PropertyImage.query.filter_by(property_id=property_.id).delete()
+
+        db.session.delete(property_)
+        db.session.commit()
+
+        return {"message": "Property deleted successfully"}, 200
+
 class BookingResource(Resource):
     @jwt_required()
     def post(self):
