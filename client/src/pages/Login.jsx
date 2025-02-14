@@ -51,13 +51,16 @@ const Login = () => {
     };
 
     return (
-        <Container maxWidth="sm" sx={{ padding: 3 }}>
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                    Login
-                </Typography>
-            </Box>
-
+        <Container
+            maxWidth="sm"
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "100vh",
+            }}
+        >
             {loginError && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                     {loginError}
@@ -131,15 +134,17 @@ const Login = () => {
                                     variant="contained"
                                     fullWidth
                                     sx={{
+                                        backgroundColor: '#cce08b',
                                         padding: '12px',
                                         fontSize: '16px',
                                         textTransform: 'none',
                                         '&:hover': {
-                                            backgroundColor: '#263FBB'
+                                            backgroundColor: '#cce08b',
+                                            opacity: 0.9,
                                         }
                                     }}
                                 >
-                                    Login
+                                    Log In
                                 </Button>
                             </Box>
 
