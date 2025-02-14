@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
     Button,
@@ -25,6 +25,7 @@ const BookingPage = () => {
     const [property, setProperty] = useState(null);
     const [bookedDates, setBookedDates] = useState([]);
     const today = startOfDay(new Date());
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (userData?.booked_properties) {
@@ -147,7 +148,16 @@ const BookingPage = () => {
 
                     <Divider sx={{ marginTop: 3 }} />
                     <Typography variant="h6" sx={{ marginTop: 2 }}>Cancel Booking</Typography>
-                    <Button variant="outlined" color="error" onClick={() => deleteBooking(id)} sx={{ marginTop: 2 }} disabled={isPastStartDate}>
+                    <Button 
+                        variant="outlined" 
+                        color="error" 
+                        onClick={() => {
+                            deleteBooking(id);
+                            navigate('/profile');
+                        }} 
+                        sx={{ marginTop: 2 }} 
+                        disabled={isPastStartDate}
+                    >
                         Delete Booking
                     </Button>
                 </CardContent>

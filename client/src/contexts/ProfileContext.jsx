@@ -83,10 +83,10 @@ export const ProfileProvider = ({ children }) => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setUserData(prev => ({
-                ...prev,
-                booked_properties: prev.booked_properties.filter(bp => bp.id !== bookingId)
-            }));
+            axios.get(`http://localhost:5000/users/${userId}`)
+                .then(response => {
+                    setUserData(response.data);
+                });
         } catch (err) {
             console.error('Error deleting booking:', err);
         }
