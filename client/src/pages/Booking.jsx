@@ -18,6 +18,7 @@ import * as Yup from "yup";
 import ImageGrid from "../components/ImageGrid";
 import { useProfile } from "../contexts/ProfileContext";
 import { useAuth } from "../contexts/AuthContext";
+import axios from "axios";
 
 const PropertyDescription = ({ property }) => (
     <Stack direction="row">
@@ -122,24 +123,22 @@ const ReviewForm = ({ token, property }) => {
                 })}
                 onSubmit={async (values, { setSubmitting, resetForm }) => {
                     try {
-                        const response = await fetch("http://localhost:5000/reviews", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`, // Ensure JWT is included
-                            },
-                            body: JSON.stringify({
+                        const { data } = await axios.post(
+                            "http://localhost:5000/reviews",
+                            {
                                 property_id: property.id,
                                 rating: values.rating,
                                 comment: values.comment,
-                            }),
-                        });
-
-                        const data = await response.json();
-                        if (!response.ok) throw new Error(data.error || "Failed to submit review");
-
+                            },
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        );
+                    
                         alert("Review submitted successfully!");
-                        resetForm();
+                        resetForm()
                     } catch (error) {
                         console.error("Error submitting review:", error);
                         alert(error.message);
