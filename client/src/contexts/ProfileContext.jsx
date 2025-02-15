@@ -41,11 +41,28 @@ export const ProfileProvider = ({ children }) => {
                 { user_id: userId, property_id: propertyId, start_date: startDate, end_date: endDate },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            // check if there is already a booking in that property
-            setUserData(prev => ({
-                ...prev,
-                booked_properties: [...prev.booked_properties, response.data.property]
-            }));
+
+            setUserData(prev => {
+                const existingPropertyIndex = prev.booked_properties.findIndex(
+                    property => property.id === response.data.property.id
+                );
+    
+                if (existingPropertyIndex !== -1) {
+                    return {
+                        ...prev,
+                        booked_properties: prev.booked_properties.map((property, index) =>
+                            index === existingPropertyIndex
+                                ? { ...property, bookings: [...property.bookings, response.data.booking] }
+                                : property
+                        )
+                    };
+                } else {
+                    return {
+                        ...prev,
+                        booked_properties: [...prev.booked_properties, response.data.property]
+                    };
+                }
+            });
             setProperties(prev =>
                 prev.map(property =>
                     property.id === propertyId
