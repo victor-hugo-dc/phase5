@@ -16,6 +16,11 @@ const Profile = () => {
     if (error) return <Typography color="error">{error}</Typography>;
     if (!userData) return <Typography>No user data available.</Typography>;
 
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    }
+
     return (
         <Container>
             <Box my={4}>
@@ -31,7 +36,7 @@ const Profile = () => {
 
                 <BookedProperties userData={userData} />
                 <Box mt={4}>
-                    <Button variant="outlined" color="error" onClick={logout}>Logout</Button>
+                    <Button variant="outlined" color="error" onClick={handleLogout}>Logout</Button>
                 </Box>
             </Box>
         </Container>
