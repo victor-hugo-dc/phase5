@@ -246,7 +246,7 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
                                 </TableBody>
                             </Table>
                         </TableContainer>
-                        <Button variant="contained" color="primary" sx={{ marginTop: 2 }} type="submit" disabled={!token}>Book Now</Button>
+                        <Button variant="contained" color="primary" sx={{ marginTop: 2, bgcolor: '#cce08b' }} type="submit" disabled={!token}>Book Now</Button>
                     </Form>
                 );
             }}
@@ -332,7 +332,7 @@ const OwnerView = ({ property, editProperty, setProperty, deleteProperty }) => {
                     </Button>
                 </form>
             ) : (
-                <Button variant="contained" color="warning" onClick={() => setIsEditing(true)}>
+                <Button variant="contained" color="warning" sx={{ bgcolor: '#cce08b' }} onClick={() => setIsEditing(true)}>
                     Edit Property Listing
                 </Button>
             )}

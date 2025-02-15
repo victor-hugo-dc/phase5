@@ -96,7 +96,7 @@ const BookingDatesForm = ({ booking, bookedDates, handleUpdateBookingDates }) =>
                             />
                         </FormControl>
                     </Box>
-                    <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }} disabled={isPastEndDate || !isValid}>
+                    <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2, bgcolor: '#cce08b' }} disabled={isPastEndDate || !isValid}>
                         Update Booking
                     </Button>
                 </Form>
