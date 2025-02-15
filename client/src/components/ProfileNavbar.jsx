@@ -40,7 +40,7 @@ const ProfileNavbar = () => {
                 {/* Left Section */}
                 <Link to="/" style={{ textDecoration: 'none' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#000' }}>
-                        malloc(Room)
+                        CampusNest
                     </Typography>
                 </Link>
 
