@@ -127,28 +127,48 @@ class PropertyResource(Resource):
 
     @jwt_required()
     def post(self):
-        try:
-            user = get_user_or_404(get_jwt_identity())
-            data = property_schema.load(request.form)
-            
-            images = request.files.getlist("images")
-            if len(images) > MAX_IMAGES_PER_PROPERTY:
-                return {"error": f"Maximum {MAX_IMAGES_PER_PROPERTY} images allowed"}, 400
-            
-            property = Property(owner=user, **data)
-            db.session.add(property)
-            
-            for image in images:
-                if image and allowed_file(image.filename):
-                    filename = secure_filename(image.filename)
-                    image.save(os.path.join(UPLOAD_FOLDER, filename))
-                    property.images.append(PropertyImage(image_path=filename))
-            
-            db.session.commit()
-            return {"property": property_schema.dump(property)}, 201
+        user_id = get_jwt_identity()
         
-        except ValidationError as e:
-            return handle_validation_error(e)
+        title = request.form.get("title")
+        description = request.form.get("description")
+        price_per_night = request.form.get("price_per_night")
+        location_name = request.form.get("location")
+        latitude, longitude = get_coordinates(request.form.get("place_id"))
+        images = request.files.getlist("images")
+
+        if not title or not description or not price_per_night:
+            return {"error": "Missing required fields"}, 400
+
+        new_property = Property(
+            title=title,
+            description=description,
+            price_per_night=float(price_per_night),
+            location_name=location_name,
+            latitude=float(latitude),
+            longitude=float(longitude),
+            owner_id=user_id,
+        )
+
+        db.session.add(new_property)
+        db.session.commit()
+
+        # Save images and associate with property
+        for image in images:
+            if image.filename == "" or "." not in image.filename:
+                continue
+
+            ext = image.filename.rsplit(".", 1)[1].lower()
+            if ext in ALLOWED_EXTENSIONS:
+                filename = secure_filename(image.filename)
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                image.save(filepath)
+
+                property_image = PropertyImage(image_path=filename, property_id=new_property.id)
+                db.session.add(property_image)
+
+        db.session.commit()
+        
+        return {"message": "Property created successfully!", "property": property_schema.dump(new_property)}, 201
         
     @jwt_required()
     def put(self, property_id):

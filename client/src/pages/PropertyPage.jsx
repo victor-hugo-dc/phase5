@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { format, addDays, isBefore, parseISO } from 'date-fns';
-import { Formik, Form } from 'formik';
+import { Formik, Form, useFormik } from 'formik';
 import * as Yup from 'yup';
 import api from '../utils/axios';
 import ImageGrid from '../components/ImageGrid';
@@ -126,7 +126,7 @@ const PropertyPage = () => {
                     <Divider sx={{ marginTop: 3 }} />
 
                     {parseInt(userId, 10) === property.owner.id ? (
-                        <OwnerView property={property} editProperty={editProperty} setProperty={setProperty} deleteProperty={deleteProperty}/>
+                        <OwnerView property={property} editProperty={editProperty} setProperty={setProperty} deleteProperty={deleteProperty} />
                     ) : (
                         <GuestBookingForm
                             property={property}
@@ -259,34 +259,40 @@ const GuestBookingForm = ({ property, userId, token, defaultDates, shouldDisable
 const OwnerView = ({ property, editProperty, setProperty, deleteProperty }) => {
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({
-        title: property.title,
-        location_name: property.location_name,
-        description: property.description,
+    const validationSchema = Yup.object().shape({
+        title: Yup.string()
+            .required('Title is required')
+            .min(3, 'Title must be at least 3 characters'),
+        description: Yup.string()
+            .required('Description is required')
+            .min(10, 'Description must be at least 10 characters'),
     });
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const prop = await editProperty(property.id, formData);
-            setProperty(prop);
-            setIsEditing(false);
-            alert("Property updated successfully");
-        } catch {
-            alert("Error updating property");
-        }
-    };
+    const formik = useFormik({
+        initialValues: {
+            title: property.title,
+            location_name: property.location_name,
+            description: property.description,
+        },
+        validationSchema,
+        onSubmit: async (values) => {
+            try {
+                const prop = await editProperty(property.id, values);
+                setProperty(prop);
+                setIsEditing(false);
+                alert("Property updated successfully");
+            } catch (error) {
+                alert(error.message || "Error updating property");
+            }
+        },
+        enableReinitialize: true // Reset form when property changes
+    });
 
     const handleDelete = async () => {
         try {
             await deleteProperty(property.id);
             alert("Property deleted successfully");
-            navigate("/"); // Redirect after deletion
+            navigate("/");
         } catch {
             alert("Error deleting property");
         }
@@ -296,43 +302,65 @@ const OwnerView = ({ property, editProperty, setProperty, deleteProperty }) => {
         <Box sx={{ marginTop: 3 }}>
             <Typography variant="h6">Manage Property</Typography>
             {isEditing ? (
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={formik.handleSubmit}>
                     <TextField
                         fullWidth
                         label="Title"
                         name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
+                        value={formik.values.title}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        error={formik.touched.title && Boolean(formik.errors.title)}
+                        helperText={formik.touched.title && formik.errors.title}
                         sx={{ marginBottom: 2 }}
                     />
                     <TextField
                         fullWidth
                         label="Location"
                         name="location_name"
-                        value={formData.location_name}
-                        onChange={handleInputChange}
+                        value={formik.values.location_name}
+                        disabled
                         sx={{ marginBottom: 2 }}
-                        disabled={true}
                     />
                     <TextField
                         fullWidth
                         label="Description"
                         name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
+                        value={formik.values.description}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        error={formik.touched.description && Boolean(formik.errors.description)}
+                        helperText={formik.touched.description && formik.errors.description}
                         multiline
                         rows={4}
                         sx={{ marginBottom: 2 }}
                     />
-                    <Button type="submit" variant="contained" color="primary">
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        disabled={formik.isSubmitting}
+                    >
                         Save Changes
                     </Button>
-                    <Button onClick={() => setIsEditing(false)} variant="outlined" sx={{ marginLeft: 2 }}>
+                    <Button
+                        onClick={() => {
+                            formik.resetForm();
+                            setIsEditing(false);
+                        }}
+                        variant="outlined"
+                        sx={{ marginLeft: 2 }}
+                    >
                         Cancel
                     </Button>
                 </form>
             ) : (
-                <Button variant="contained" color="warning" sx={{ bgcolor: '#cce08b' }} onClick={() => setIsEditing(true)}>
+                <Button
+                    variant="contained"
+                    color="warning"
+                    sx={{ bgcolor: '#cce08b' }}
+                    onClick={() => setIsEditing(true)}
+                >
                     Edit Property Listing
                 </Button>
             )}
