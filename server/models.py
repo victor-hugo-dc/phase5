@@ -45,40 +45,6 @@ class Property(db.Model):
         super().__init__(**kwargs)
         if len(self.images) > 10:
             raise ValidationError("A property can have at most 10 images.")
-    
-    def to_dict(self, user_id=None):
-        return {
-            "id": self.id,
-            "title": self.title,
-            "description": self.description,
-            "price_per_night": self.price_per_night,
-            "location_name": self.location_name,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "owner": {
-                "id": self.owner_id,
-                "name": self.owner.name,   
-            },
-            "images": [{"image_path": img.image_path} for img in self.images],
-            "bookings": [
-                {
-                    "id": booking.id,
-                    "start_date": booking.start_date.strftime("%Y-%m-%d"),
-                    "end_date": booking.end_date.strftime("%Y-%m-%d"),
-                    "user_id": booking.user_id
-                }
-                for booking in self.bookings if user_id is None or booking.user_id == user_id
-            ],
-            "reviews": [
-                {
-                    "id": review.id,
-                    "rating": review.rating,
-                    "comment": review.comment,
-                    "user_id": review.user_id
-                }
-                for review in self.reviews
-            ]
-        }
 
 class PropertyImage(db.Model):
     __tablename__ = 'property_images'
@@ -101,17 +67,6 @@ class Booking(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     user = db.relationship('User', back_populates='bookings')
     property = db.relationship('Property', back_populates='bookings')
-    
-    def to_dict(self):
-        booking_data = {
-            "id": self.id,
-            "user_id": self.user_id,
-            "property_id": self.property_id,
-            "start_date": self.start_date.strftime("%Y-%m-%d"),
-            "end_date": self.end_date.strftime("%Y-%m-%d")
-        }
-
-        return booking_data
 
 
 class Review(db.Model):
@@ -123,16 +78,6 @@ class Review(db.Model):
     comment = db.Column(db.Text, nullable=False)
     user = db.relationship('User', back_populates='reviews')
     property = db.relationship('Property', back_populates='reviews')
-    
-    def to_dict(self):
-        review_data = {
-            "id": self.id,
-            "user_id": self.user_id,
-            "property_id": self.property_id,
-            "rating": self.rating,
-            "comment": self.comment,
-        }
-        return review_data
 
 
 class ReviewSchema(ma.SQLAlchemyAutoSchema):
@@ -158,12 +103,21 @@ class PropertyImageSchema(ma.SQLAlchemyAutoSchema):
 
 class PropertySchema(ma.SQLAlchemyAutoSchema):
     owner = ma.Nested(lambda: UserSchema(only=("id", "name")))
-    bookings = ma.Nested(BookingSchema, many=True)
+    bookings = ma.Method("get_filtered_bookings")
     reviews = ma.Nested(ReviewSchema, many=True)
     images = ma.Nested(PropertyImageSchema, many=True)
 
     class Meta:
         model = Property
+    
+    def get_filtered_bookings(self, obj):
+        user_id = self.context.get("user_id")
+        filtered_bookings = [
+            booking
+            for booking in obj.bookings
+            if user_id is None or booking.user_id == user_id
+        ]
+        return BookingSchema(many=True).dump(filtered_bookings)
 
 class UserSchema(ma.SQLAlchemyAutoSchema):
     owned_properties = ma.Method("get_owned_properties")

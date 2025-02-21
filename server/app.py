@@ -60,6 +60,15 @@ class LoginResource(Resource):
         return {"access_token": access_token, "user_id": user.id}, 200
 
 
+class CheckSession(Resource):
+    @jwt_required()
+    def get(self):
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found."}, 404
+        return user_schema.dump(user), 200
+
 class UserResource(Resource):
     def get(self, user_id=None):
         if user_id:
@@ -153,8 +162,8 @@ class PropertyResource(Resource):
                 db.session.add(property_image)
 
         db.session.commit()
-
-        return {"message": "Property created successfully!", "property": new_property.to_dict()}, 201
+        
+        return {"message": "Property created successfully!", "property": property_schema.dump(new_property)}, 201
 
     @jwt_required()
     def put(self, property_id):
@@ -182,6 +191,7 @@ class PropertyResource(Resource):
     def delete(self, property_id):
         user_id = get_jwt_identity()
         property_ = Property.query.get(property_id)
+        # search user's properties not the property table
 
         if not property_:
             return {"error": "Property not found"}, 404
@@ -214,7 +224,13 @@ class BookingResource(Resource):
         db.session.commit()
         property = Property.query.get(data["property_id"])
         booking = Booking.query.get(new_booking.id)
-        return {"message": "Booking created successfully", "property": property.to_dict(user_id = user_id), "booking": booking.to_dict()}, 201
+        property_schema.context = {"user_id": user_id}
+        
+        return {
+            "message": "Booking created successfully", 
+            "property": property_schema.dump(property), 
+            "booking": booking_schema.dump(booking), 
+        }, 201
 
     @jwt_required()
     def put(self, booking_id):
@@ -278,7 +294,7 @@ class ReviewResource(Resource):
         db.session.add(new_review)
         db.session.commit()
 
-        return {"review": new_review.to_dict()}, 201
+        return {"review": review_schema.dump(new_review)}, 201
 
 
 class Autocomplete(Resource):
@@ -347,6 +363,7 @@ class AvailableProperties(Resource):
         return {'available_properties': available_properties}, 200
 
 # API Routes
+api.add_resource(CheckSession, '/checksession')
 api.add_resource(SignupResource, '/signup')
 api.add_resource(LoginResource, '/login')
 

@@ -21,12 +21,16 @@ export const ProfileProvider = ({ children }) => {
         }
 
         setLoading(true);
-        api.get(`/users/${userId}`)
+        api.get(`/checksession`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
             .then(response => {
                 setUserData(response.data);
             })
             .catch(err => {
-                setError('Failed to fetch user data');
+                setError('Failed to fetch user data', err);
             })
             .finally(() => {
                 setLoading(false);
@@ -46,7 +50,7 @@ export const ProfileProvider = ({ children }) => {
                 const existingPropertyIndex = prev.booked_properties.findIndex(
                     property => property.id === response.data.property.id
                 );
-    
+
                 if (existingPropertyIndex !== -1) {
                     return {
                         ...prev,
@@ -130,7 +134,6 @@ export const ProfileProvider = ({ children }) => {
                 owned_properties: [...prev.owned_properties, response.data.property]
             }));
             setProperties(prev => [...prev, response.data.property]);
-            console.log(response.data.property);
             return response.data.property.id;
         } catch (err) {
             console.error('Error adding property:', err);
