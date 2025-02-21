@@ -176,7 +176,7 @@ export const ProfileProvider = ({ children }) => {
                     op.id === propertyId ? { ...op, ...updatedData } : op
                 )
             }));
-            return response.data;
+            return response.data.property;
         } catch (err) {
             console.error('Error editing property:', err);
         }

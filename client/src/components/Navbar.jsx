@@ -121,7 +121,6 @@ const Navbar = () => {
             
                                 const response = await api.post('/search', requestData);
             
-                                console.log('Available Properties:', response.data.available_properties);
                                 setProperties(response.data.available_properties);
             
                             } catch (error) {

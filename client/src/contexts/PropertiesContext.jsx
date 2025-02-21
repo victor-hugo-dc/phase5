@@ -17,7 +17,7 @@ export const PropertiesProvider = ({ children }) => {
 
         api.get(`/properties?page=${page}&limit=12`)
             .then(response => {
-                const newProperties = response.data.sort(() => Math.random() - 0.5);
+                const newProperties = response.data.properties.sort(() => Math.random() - 0.5);
 
                 if (newProperties.length === 0) {
                     setHasMore(false); // No more properties to fetch

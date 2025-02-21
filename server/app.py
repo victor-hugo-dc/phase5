@@ -13,51 +13,68 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 
+# Constants
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.getcwd(), "images"))
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+DATE_FORMAT = "%Y-%m-%d"
+MAX_IMAGES_PER_PROPERTY = 10
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
+# Schema instances
 user_schema = UserSchema()
-users_schema = UserSchema(many=True)
 property_schema = PropertySchema()
-properties_schema = PropertySchema(many=True)
 booking_schema = BookingSchema()
-bookings_schema = BookingSchema(many=True)
 review_schema = ReviewSchema()
-reviews_schema = ReviewSchema(many=True)
+
+users_schema = UserSchema(many=True)
+properties_schema = PropertySchema(many=True)
+bookings_schema = BookingSchema(many=True)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def handle_validation_error(error):
+    return jsonify({"error": "Validation error", "messages": error.messages}), 400
+
+def get_user_or_404(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        raise NotFoundError("User not found")
+    return user
+
+class NotFoundError(Exception):
+    pass
 
 class SignupResource(Resource):
     def post(self):
-        data = request.get_json()
-        name, email, password = data.get('name'), data.get('email'), data.get('password')
-
-        if not all([name, email, password]):
-            return {"error": "All fields are required"}, 400
+        try:
+            data = user_schema.load(request.get_json())
+            if User.query.filter_by(email=data['email']).first():
+                return {"error": "Email already exists"}, 409
+            
+            user = User(**data)
+            user.set_password(data['password'])
+            db.session.add(user)
+            db.session.commit()
+            return {"message": "User registered successfully"}, 201
         
-        if User.query.filter_by(email=email).first():
-            return {"error": "Email already exists"}, 400
-
-        new_user = User(name=name, email=email)
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.commit()
-
-        return {"message": "User registered successfully"}, 201
+        except ValidationError as e:
+            return handle_validation_error(e)
 
 
 class LoginResource(Resource):
     def post(self):
         data = request.get_json()
-        email, password = data.get('email'), data.get('password')
-
-        user = User.query.filter_by(email=email).first()
-        if not user or not user.check_password(password):
-            return {"error": "Invalid email or password"}, 401
-
-        access_token = create_access_token(identity=user.id, expires_delta=False)
-        return {"access_token": access_token, "user_id": user.id}, 200
+        try:
+            user = User.query.filter_by(email=data.get('email')).first()
+            if not user or not user.check_password(data.get('password')):
+                return {"error": "Invalid credentials"}, 401
+            
+            access_token = create_access_token(identity=user.id, expires_delta=False)
+            return {"access_token": access_token, "user": user_schema.dump(user)}, 200
+        
+        except KeyError:
+            return {"error": "Email and password required"}, 400
 
 
 class CheckSession(Resource):
@@ -70,37 +87,27 @@ class CheckSession(Resource):
         return user_schema.dump(user), 200
 
 class UserResource(Resource):
-    def get(self, user_id=None):
+    def get(self, user_id):
         if user_id:
             user = User.query.get(user_id)
             if not user:
                 return {"error": "User not found."}, 404
             return user_schema.dump(user), 200
-        
-        users = User.query.all()
-        return users_schema.dump(users), 200
 
     @jwt_required()
     def put(self, user_id):
-        current_user_id = get_jwt_identity()
-        if current_user_id != user_id:
-            return {"error": "You can only update your own information."}, 403
+        current_user = get_user_or_404(get_jwt_identity())
+        if current_user.id != user_id:
+            return {"error": "Unauthorized"}, 403
         
-        data = request.get_json()
-        new_name = data.get('name')
-
-        if not new_name:
-            return {"error": "Name is required."}, 400
+        try:
+            data = user_schema.load(request.get_json(), partial=True)
+            current_user.update(**data)
+            db.session.commit()
+            return {"user": user_schema.dump(current_user)}, 200
         
-        user = User.query.get(user_id)
-        if not user:
-            return {"error": "User not found."}, 404
-        
-        # Update the user's name
-        user.name = new_name
-        db.session.commit()
-
-        return {"message": "User name updated successfully."}, 200
+        except ValidationError as e:
+            return handle_validation_error(e)
 
 class ImageResource(Resource):
     def get(self, filename):
@@ -108,100 +115,65 @@ class ImageResource(Resource):
         return send_from_directory(images_dir, filename)
 
 class PropertyResource(Resource):
-    # TODO: add 404 error if property not found
     def get(self, property_id=None):
         if property_id:
-            property_ = Property.query.get(property_id)
-            return property_schema.dump(property_)
-
+            property = Property.query.get_or_404(property_id)
+            return {"property": property_schema.dump(property)}, 200
+        
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 12, type=int)
         properties = Property.query.paginate(page=page, per_page=limit, error_out=False)
-
-        return properties_schema.dump(properties.items)
+        return {"properties": properties_schema.dump(properties.items)}, 200
 
     @jwt_required()
     def post(self):
-        user_id = get_jwt_identity()
+        try:
+            user = get_user_or_404(get_jwt_identity())
+            data = property_schema.load(request.form)
+            
+            images = request.files.getlist("images")
+            if len(images) > MAX_IMAGES_PER_PROPERTY:
+                return {"error": f"Maximum {MAX_IMAGES_PER_PROPERTY} images allowed"}, 400
+            
+            property = Property(owner=user, **data)
+            db.session.add(property)
+            
+            for image in images:
+                if image and allowed_file(image.filename):
+                    filename = secure_filename(image.filename)
+                    image.save(os.path.join(UPLOAD_FOLDER, filename))
+                    property.images.append(PropertyImage(image_path=filename))
+            
+            db.session.commit()
+            return {"property": property_schema.dump(property)}, 201
         
-        title = request.form.get("title")
-        description = request.form.get("description")
-        price_per_night = request.form.get("price_per_night")
-        location_name = request.form.get("location")
-        latitude, longitude = get_coordinates(request.form.get("place_id"))
-        images = request.files.getlist("images")
-
-        if not title or not description or not price_per_night:
-            return {"error": "Missing required fields"}, 400
-
-        new_property = Property(
-            title=title,
-            description=description,
-            price_per_night=float(price_per_night),
-            location_name=location_name,
-            latitude=float(latitude),
-            longitude=float(longitude),
-            owner_id=user_id,
-        )
-
-        db.session.add(new_property)
-        db.session.commit()
-
-        # Save images and associate with property
-        for image in images:
-            if image.filename == "" or "." not in image.filename:
-                continue
-
-            ext = image.filename.rsplit(".", 1)[1].lower()
-            if ext in ALLOWED_EXTENSIONS:
-                filename = secure_filename(image.filename)
-                filepath = os.path.join(UPLOAD_FOLDER, filename)
-                image.save(filepath)
-
-                property_image = PropertyImage(image_path=filename, property_id=new_property.id)
-                db.session.add(property_image)
-
-        db.session.commit()
+        except ValidationError as e:
+            return handle_validation_error(e)
         
-        return {"message": "Property created successfully!", "property": property_schema.dump(new_property)}, 201
-
     @jwt_required()
     def put(self, property_id):
-        user_id = get_jwt_identity()
-        property_ = Property.query.get(property_id)
+        property = Property.query.get_or_404(property_id)
+        if property.owner_id != get_jwt_identity():
+            return {"error": "Unauthorized"}, 403
         
-        if not property_:
-            return {"error": "Property not found"}, 404
+        try:
+            data = property_schema.load(request.get_json(), partial=True)
+            property.update(**data)
+            db.session.commit()
+            return {"property": property_schema.dump(property)}, 200
         
-        if property_.owner_id != user_id:
-            return {"error": "Unauthorized to edit this property"}, 403
-        
-        data = request.get_json()
-        
-        property_.title = data.get("title", property_.title)
-        property_.description = data.get("description", property_.description)
-        property_.price_per_night = data.get("price_per_night", property_.price_per_night)
-        property_.location_name = data.get("location_name", property_.location_name)
-        
-        db.session.commit()
-        
-        return property_schema.dump(property_), 200
+        except ValidationError as e:
+            return handle_validation_error(e)
 
     @jwt_required()
     def delete(self, property_id):
-        user_id = get_jwt_identity()
-        property_ = Property.query.get(property_id)
-        # search user's properties not the property table
-
-        if not property_:
-            return {"error": "Property not found"}, 404
+        property = Property.query.get_or_404(property_id)
+        if property.owner_id != get_jwt_identity():
+            return {"error": "Unauthorized"}, 403
         
-        if property_.owner_id != user_id:
-            return {"error": "Unauthorized to delete this property"}, 403
-        
-        PropertyImage.query.filter_by(property_id=property_.id).delete()
+        PropertyImage.query.filter_by(property_id=property.id).delete()
 
-        db.session.delete(property_)
+        db.session.delete(property)
         db.session.commit()
 
         return {"message": "Property deleted successfully"}, 200
@@ -209,75 +181,47 @@ class PropertyResource(Resource):
 class BookingResource(Resource):
     @jwt_required()
     def post(self):
-        user_id = get_jwt_identity()
-        data = request.get_json()
-
         try:
-            data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-            data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
-        except (ValueError, KeyError):
-            return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
-
-        # Create a new booking
-        new_booking = Booking(**data)
-        db.session.add(new_booking)
-        db.session.commit()
-        property = Property.query.get(data["property_id"])
-        booking = Booking.query.get(new_booking.id)
-        property_schema.context = {"user_id": user_id}
+            user_id = get_jwt_identity()
+            data = booking_schema.load(request.get_json())
+            user = get_user_or_404(user_id)
+            
+            booking = Booking(user=user, **data)
+            db.session.add(booking)
+            db.session.commit()
+            
+            property = Property.query.get(data["property_id"])
+            property_schema.context = {"user_id": user_id}
+            
+            return {"booking": booking_schema.dump(booking), "property": property_schema.dump(property)}, 201
         
-        return {
-            "message": "Booking created successfully", 
-            "property": property_schema.dump(property), 
-            "booking": booking_schema.dump(booking), 
-        }, 201
+        except ValidationError as e:
+            return handle_validation_error(e)
 
     @jwt_required()
     def put(self, booking_id):
-        user_id = get_jwt_identity()
-        booking = Booking.query.get(booking_id)
+        booking = Booking.query.get_or_404(booking_id)
+        if booking.user_id != get_jwt_identity():
+            return {"error": "Unauthorized"}, 403
         
-        if not booking:
-            return {"error": "Booking not found."}, 404
+        try:
+            data = booking_schema.load(request.get_json(), partial=True)
+            booking.update(**data)
+            db.session.commit()
+            return {"booking": booking_schema.dump(booking)}, 200
         
-        if booking.user_id != user_id:
-            return {"error": "You can only edit your own bookings."}, 403
-
-        data = request.get_json()
-        if "start_date" in data:
-            try:
-                data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-            except ValueError:
-                return {"error": "Invalid start date format. Use YYYY-MM-DD."}, 400
-
-        if "end_date" in data:
-            try:
-                data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
-            except ValueError:
-                return {"error": "Invalid end date format. Use YYYY-MM-DD."}, 400
-
-        for key, value in data.items():
-            setattr(booking, key, value)
-
-        db.session.commit()
-
-        return {"message": "Booking updated successfully."}, 200
+        except ValidationError as e:
+            return handle_validation_error(e)
 
     @jwt_required()
     def delete(self, booking_id):
-        user_id = get_jwt_identity()
-        booking = Booking.query.get(booking_id)
-
-        if not booking:
-            return {"error": "Booking not found."}, 404
-
-        if booking.user_id != user_id:
-            return {"error": "You can only delete your own bookings."}, 403
-
+        booking = Booking.query.get_or_404(booking_id)
+        if booking.user_id != get_jwt_identity():
+            return {"error": "Unauthorized"}, 403
+        
         db.session.delete(booking)
         db.session.commit()
-
-        return {"message": "Booking deleted successfully."}, 200
+        return {"message": "Booking deleted"}, 204
 
 class ReviewResource(Resource):
     @jwt_required()
@@ -372,7 +316,7 @@ api.add_resource(Autocomplete, '/autocomplete')
 api.add_resource(AvailableProperties, '/search')
 api.add_resource(ImageResource, '/images/<string:filename>')
 
-api.add_resource(UserResource, '/users', '/users/<int:user_id>')
+api.add_resource(UserResource, '/users/<int:user_id>')
 api.add_resource(PropertyResource, '/properties', '/properties/<int:property_id>')
 api.add_resource(BookingResource, '/bookings', '/bookings/<int:booking_id>')
 api.add_resource(ReviewResource, '/reviews')

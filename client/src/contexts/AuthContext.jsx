@@ -10,13 +10,13 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const response = await api.post('/login', { email, password });
-            const { access_token, user_id } = response.data;
+            const { access_token, user } = response.data;
 
             setToken(access_token);
-            setUserId(user_id);
+            setUserId(user.id);
 
             localStorage.setItem('token', access_token);
-            localStorage.setItem('userId', user_id);
+            localStorage.setItem('userId', user.id);
 
             return true;
         } catch (error) {

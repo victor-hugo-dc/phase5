@@ -45,7 +45,7 @@ const PropertyPage = () => {
         if (!property) {
             api.get(`/properties/${id}`)
                 .then((res) => {
-                    setProperty(res.data);
+                    setProperty(res.data.property);
                     setLoading(false);
                 })
                 .catch(() => {
