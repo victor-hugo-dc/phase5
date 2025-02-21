@@ -39,7 +39,7 @@ const HostHome = () => {
             values.images.forEach((image) => formData.append('images', image));
 
             const id = await addProperty(formData);
-            navigate(`/property/${id}`);
+            navigate(`/properties/${id}`);
         }
     });
 

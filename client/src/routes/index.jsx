@@ -28,17 +28,17 @@ export default function Router() {
             element: <MainLayout />,
             children: [
                 { path: "", element: <HomePage /> },
-                { path: "property/:id", element: <PropertyPage /> }
+                { path: "properties/:id", element: <PropertyPage /> }
             ],
         },
         {
             path: "/",
             element: <ProfileLayout />,
             children: [
-                { path: "host/:id", element: <HostPage/>},
+                { path: "hosts/:id", element: <HostPage/>},
                 { path: "profile", element: <ProfilePage /> },
                 { path: "host-home", element: <HostHomePage /> },
-                { path: "booking/:id", element: <BookingPage />},
+                { path: "bookings/:id", element: <BookingPage />},
             ],
         },
     ]);

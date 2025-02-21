@@ -6,10 +6,10 @@ const PropertyCard = ({ property }) => {
     const navigate = useNavigate();
     const { id, title, location_name, owner, price_per_night, images } = property;
 
-    const handleCardClick = () => navigate(`/property/${id}`);
+    const handleCardClick = () => navigate(`/properties/${id}`);
     const handleHostClick = (e) => {
         e.stopPropagation();
-        navigate(`/host/${owner?.id}`);
+        navigate(`/hosts/${owner?.id}`);
     };
 
     const firstImage = images?.length > 0 ? `http://localhost:5000/images/${images[0].image_path}` : 'https://via.placeholder.com/300'; // Default placeholder if no images

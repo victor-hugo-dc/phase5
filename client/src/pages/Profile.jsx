@@ -35,7 +35,7 @@ const Profile = () => {
                     title="Owned Properties"
                     items={userData.owned_properties}
                     renderItem={(property) => (
-                        <PropertyCard key={property.id} property={property} onClick={() => navigate(`/property/${property.id}`)} />
+                        <PropertyCard key={property.id} property={property} onClick={() => navigate(`/properties/${property.id}`)} />
                     )}
                 />
 

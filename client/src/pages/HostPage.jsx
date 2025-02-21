@@ -8,7 +8,7 @@ import { PropertyCard } from '../components/OwnedPropertyCard';
 
 const HostPage = () => {
     const { id } = useParams();
-    const { navigate } = useNavigate();
+    const navigate = useNavigate();
     const [userData, setUserData] = useState({});
     const [loading, setLoading] = useState(true);
 
@@ -42,7 +42,7 @@ const HostPage = () => {
                     title="Owned Properties"
                     items={userData.owned_properties}
                     renderItem={(property) => (
-                        <PropertyCard key={property.id} property={property} onClick={() => navigate(`/property/${property.id}`)} />
+                        <PropertyCard key={property.id} property={property} onClick={() => navigate(`/properties/${property.id}`)} />
                     )}
                 />
 
@@ -50,7 +50,7 @@ const HostPage = () => {
                     title="Previous Stays"
                     items={userData.booked_properties}
                     renderItem={(property) => (
-                        <PropertyCard key={property.id} property={property} onClick={() => navigate(`/property/${property.id}`)} />
+                        <PropertyCard key={property.id} property={property}/>
                     )}
                 />
             </Box>

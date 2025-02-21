@@ -17,7 +17,7 @@ const BookedProperties = ({ userData }) => {
         : [];
 
     const renderBookedProperty = ({ property, booking, key }) => (
-        <Card key={key} sx={{ height: 350, minWidth: 300, objectFit: 'cover', cursor: 'pointer' }} onClick={() => navigate(`/booking/${booking.id}`)}>
+        <Card key={key} sx={{ height: 350, minWidth: 300, objectFit: 'cover', cursor: 'pointer' }} onClick={() => navigate(`/bookings/${booking.id}`)}>
             <CardMedia
                 component="img"
                 image={`http://localhost:5000/images/${property.images[0].image_path}`}
