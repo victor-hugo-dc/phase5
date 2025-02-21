@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Container, Typography, Box, Button, Divider } from '@mui/material';
@@ -8,13 +8,18 @@ import { PropertyCard } from '../components/OwnedPropertyCard';
 import BookedProperties from '../components/BookedProperties';
 
 const Profile = () => {
-    const { userData, loading, error } = useProfile();
+    const { userData, loading, error, token } = useProfile();
     const { logout } = useAuth();
     const navigate = useNavigate();
+    useEffect(() => {
+        if (!token) {
+            navigate('/');
+        }
+    }, [token, navigate]);
 
     if (loading) return <Typography>Loading...</Typography>;
     if (error) return <Typography color="error">{error}</Typography>;
-    if (!userData) return <Typography>No user data available.</Typography>;
+    if (!userData) return <Typography>Couldn't find user.</Typography>;
 
     const handleLogout = () => {
         logout();

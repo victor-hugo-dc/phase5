@@ -9,9 +9,15 @@ import { useDropzone } from 'react-dropzone'; // Import react-dropzone
 const HostHome = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [placeId, setPlaceId] = useState('');
-    const { addProperty } = useProfile();
+    const { addProperty, token } = useProfile();
     const navigate = useNavigate();
     const [imagePreviews, setImagePreviews] = useState([]); // Track image previews
+
+    useEffect(() => {
+        if (!token) {
+            navigate('/');
+        }
+    }, [token, navigate]);
 
     const formik = useFormik({
         initialValues: {
@@ -80,11 +86,11 @@ const HostHome = () => {
                 <TextField label="Title" name="title" value={formik.values.title} onChange={formik.handleChange} required />
                 <TextField label="Description" name="description" value={formik.values.description} onChange={formik.handleChange} required multiline rows={4} />
                 <TextField label="Price per Night" name="pricePerNight" type="number" value={formik.values.pricePerNight} onChange={formik.handleChange} required />
-                
+
                 {/* Location Input Wrapper */}
                 <Box sx={{ position: 'relative' }}>
                     <TextField label="Location" name="location" value={formik.values.location} onChange={handleLocationChange} required fullWidth />
-                    
+
                     {suggestions.length > 0 && (
                         <Box sx={{
                             position: 'absolute',

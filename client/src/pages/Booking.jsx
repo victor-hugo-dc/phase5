@@ -198,6 +198,12 @@ const BookingPage = () => {
     const [hasReviewed, setHasReviewed] = useState(false);
 
     useEffect(() => {
+        if (!token) {
+            navigate('/');
+        }
+    }, [token, navigate]);
+
+    useEffect(() => {
         if (userData?.booked_properties) {
             for (const prop of userData.booked_properties) {
                 const foundBooking = prop.bookings.find((b) => b.id === parseInt(id, 10));
