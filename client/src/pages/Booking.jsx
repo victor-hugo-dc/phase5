@@ -174,7 +174,7 @@ const ReviewForm = ({ token, property, addReview }) => {
                                 helperText={touched.comment && errors.comment}
                                 fullWidth
                             />
-                            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+                            <Button type="submit" variant="contained" sx={{ bgcolor: '#cce08b' }} disabled={isSubmitting}>
                                 Submit Review
                             </Button>
                         </Stack>
