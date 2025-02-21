@@ -8,8 +8,8 @@ import { PropertyCard } from '../components/OwnedPropertyCard';
 import BookedProperties from '../components/BookedProperties';
 
 const Profile = () => {
-    const { userData, loading, error, token } = useProfile();
-    const { logout } = useAuth();
+    const { userData, loading, error } = useProfile();
+    const { logout, token } = useAuth();
     const navigate = useNavigate();
     useEffect(() => {
         if (!token) {

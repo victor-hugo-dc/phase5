@@ -87,11 +87,31 @@ export const ProfileProvider = ({ children }) => {
                 { start_date: startDate, end_date: endDate },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            // TODO: Replace this bandaid.
-            api.get(`/users/${userId}`)
-                .then(response => {
-                    setUserData(response.data);
+
+            setUserData(prevUserData => {
+                const updatedBookedProperties = prevUserData.booked_properties.map(property => {
+                    const bookingIndex = property.bookings.findIndex(b => b.id === parseInt(bookingId, 10));
+
+                    if (bookingIndex === -1) return property;
+
+                    const updatedBookings = [...property.bookings];
+                    updatedBookings[bookingIndex] = {
+                        ...updatedBookings[bookingIndex],
+                        start_date: startDate,
+                        end_date: endDate
+                    };
+
+                    return {
+                        ...property,
+                        bookings: updatedBookings
+                    };
                 });
+
+                return {
+                    ...prevUserData,
+                    booked_properties: updatedBookedProperties
+                };
+            });
         } catch (err) {
             console.error('Error editing booking:', err);
         }
@@ -104,16 +124,19 @@ export const ProfileProvider = ({ children }) => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            api.get(`/users/${userId}`)
-                .then(response => {
-                    setUserData(response.data);
-                });
+            setUserData(prevUserData => ({
+                ...prevUserData,
+                booked_properties: prevUserData.booked_properties.map(property => ({
+                    ...property,
+                    bookings: property.bookings.filter(booking => booking.id !== parseInt(bookingId, 10))
+                }))
+            }));
 
             setProperties(prev =>
                 prev.map(property => ({
                     ...property,
                     bookings: property.bookings
-                        ? property.bookings.filter(booking => booking.id !== bookingId)
+                        ? property.bookings.filter(booking => booking.id !== parseInt(bookingId, 10))
                         : []
                 }))
             );

@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../utils/axios';
 import { Box, TextField, Button, List, ListItem, ListItemText, Container, Typography } from '@mui/material';
 import { useFormik } from 'formik';
 import { useProfile } from '../contexts/ProfileContext';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone'; // Import react-dropzone
+import { useAuth } from '../contexts/AuthContext';
 
 const HostHome = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [placeId, setPlaceId] = useState('');
-    const { addProperty, token } = useProfile();
+    const { addProperty } = useProfile();
     const navigate = useNavigate();
     const [imagePreviews, setImagePreviews] = useState([]); // Track image previews
+    const { token } = useAuth();
 
     useEffect(() => {
         if (!token) {
